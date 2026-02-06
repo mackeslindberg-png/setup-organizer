@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="80" fill="#1b1c20"/>
+  
+  <!-- ruler -->
+  <rect x="300" y="80" width="40" height="360" rx="10" fill="#8aa0ff"/>
+  <rect x="305" y="100" width="30" height="4" fill="white"/>
+  <rect x="305" y="140" width="20" height="4" fill="white"/>
+  <rect x="305" y="180" width="30" height="4" fill="white"/>
+  <rect x="305" y="220" width="20" height="4" fill="white"/>
+  <rect x="305" y="260" width="30" height="4" fill="white"/>
+  <rect x="305" y="300" width="20" height="4" fill="white"/>
+  <rect x="305" y="340" width="30" height="4" fill="white"/>
+
+  <!-- car body -->
+  <rect x="80" y="240" width="260" height="80" rx="30" fill="white"/>
+  <rect x="120" y="200" width="180" height="60" rx="25" fill="white"/>
+
+  <!-- wing -->
+  <rect x="60" y="220" width="40" height="10" fill="white"/>
+  <rect x="60" y="210" width="40" height="10" fill="white"/>
+
+  <!-- wheels -->
+  <circle cx="130" cy="330" r="28" fill="#0f0f10"/>
+  <circle cx="280" cy="330" r="28" fill="#0f0f10"/>
+</svg>
