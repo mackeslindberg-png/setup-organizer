@@ -1,0 +1,15 @@
+{
+  "name": "setup-organizer",
+  "short_name": "setup",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#111217",
+  "theme_color": "#111217",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
