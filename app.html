@@ -43,12 +43,11 @@
     .hr{height:1px;background:var(--line);margin:10px 0}
     .two{display:grid;grid-template-columns: 380px 1fr;gap:12px}
     @media (max-width: 980px){ .two{grid-template-columns:1fr;}}
-    input, textarea, select{
+    input, textarea{
       width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);
       background:#0c0d10;color:var(--text);outline:none;font-size:14px;
     }
     textarea{min-height:80px;resize:vertical}
-    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
     .list{display:flex;flex-direction:column;gap:10px}
     .item{
       display:flex;gap:10px;align-items:flex-start;
@@ -58,51 +57,50 @@
     .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:12px}
 
-    /* Sheet */
-    .sheetWrap{
+    /* PDF stage */
+    .stageWrap{
       background:#0b0c10;
       border:1px solid var(--line);
       border-radius:16px;
       padding:10px;
     }
-    .sheetScroller{
+    .stageScroller{
       overflow:auto;
       -webkit-overflow-scrolling:touch;
       border-radius:12px;
       background:#0b0c10;
     }
-    .sheet{
+    .stage{
       position:relative;
-      width:1100px;           /* fasta “arbetsbredd” */
-      max-width:none;
+      display:inline-block;
       transform-origin: top left;
     }
-    .sheet img{
-      width:100%;
-      height:auto;
-      display:block;
-      border-radius:10px;
-    }
-    .fld{
+    canvas{display:block; border-radius:10px}
+
+    /* Overlay fields */
+    .fld, .chk, .rad{
       position:absolute;
       font: 12px system-ui, sans-serif;
+      outline:none;
+    }
+    .fld{
       padding:2px 4px;
       border:1px solid rgba(79,124,255,.55);
       background:rgba(12,13,16,.65);
       color:var(--text);
       border-radius:6px;
-      outline:none;
     }
     .fld.small{font-size:11px;padding:1px 3px}
-    .chk{
-      position:absolute;
+    .chk, .rad{
       width:16px;height:16px;
       accent-color: var(--accent);
       background:rgba(12,13,16,.65);
       border-radius:4px;
     }
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
   </style>
+
+  <!-- pdf.js (render + formfält) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
 </head>
 <body>
 <header>
@@ -110,7 +108,7 @@
     <div class="row">
       <div>
         <h1>setup-organizer</h1>
-        <div class="sub">X4F 2024 · Sheet mode · Offline (localStorage)</div>
+        <div class="sub">X4F 2024 · PDF-formfält (100%)</div>
       </div>
       <div class="spacer"></div>
       <button class="btn ghost" id="btnNew">Ny setup</button>
@@ -123,27 +121,16 @@
 <main class="wrap">
   <div class="two">
 
-    <!-- Left panel -->
     <section class="card">
-      <div class="row">
-        <div>
-          <div style="font-weight:900">Factory baselines</div>
-          <div class="meta">Låsta mallar</div>
-        </div>
-      </div>
-
+      <div style="font-weight:900">Factory baselines</div>
+      <div class="meta">Låsta mallar (kopiera som ny)</div>
       <div class="hr"></div>
-
       <div class="list" id="baselineList"></div>
 
       <div class="hr"></div>
 
-      <div class="row">
-        <div>
-          <div style="font-weight:900">Mina setuper</div>
-          <div class="meta">Sök + filter</div>
-        </div>
-      </div>
+      <div style="font-weight:900">Mina setuper</div>
+      <div class="meta">Sök + filter</div>
 
       <div class="row" style="margin-top:10px">
         <input id="q" placeholder="Sök: bana, däck, kommentar...">
@@ -154,29 +141,25 @@
       </div>
 
       <div class="hr"></div>
-
       <div class="list" id="myList"></div>
       <div class="meta" id="emptyHint" style="display:none">Inga setuper än.</div>
-
-      <div class="hr"></div>
-
-      <div class="meta">
-        Tips: zooma i webbläsaren om du vill. Sheet är byggd för att se ut exakt som XRAY-bladet.
-      </div>
     </section>
 
-    <!-- Right panel: Sheet -->
-    <section class="sheetWrap">
-      <div class="toolbar" style="margin-bottom:10px">
-        <span class="pill" id="statusPill">Ingen setup vald</span>
-        <span class="pill">Bakgrund: sheet.png</span>
+    <section class="stageWrap">
+      <div class="row" style="margin-bottom:10px">
+        <span class="pill" id="statusPill">Laddar sheet.pdf…</span>
+        <span class="pill">Källa: sheet.pdf</span>
       </div>
 
-      <div class="sheetScroller">
-        <div class="sheet" id="sheet">
-          <img src="./sheet.png" alt="X4F 2024 setup sheet">
-          <!-- Fields injected by JS -->
+      <div class="stageScroller">
+        <div class="stage" id="stage">
+          <canvas id="pdfCanvas"></canvas>
+          <!-- formfält overlay skapas av JS -->
         </div>
+      </div>
+
+      <div class="meta" style="margin-top:10px">
+        Om du vill skriva i små rutor: zooma in med webbläsarens pinch-zoom.
       </div>
     </section>
 
@@ -185,16 +168,20 @@
 
 <script>
 (() => {
-  // --- SW ---
+  // SW
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
 
-  // --- Storage ---
-  const KEY = 'setup_organizer_x4f24_sheet_v1';
+  // pdf.js worker
+  // (CDN: pdf.min.js kan hitta worker via samma version-länk)
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
+
+  // Storage
+  const KEY = 'setup_organizer_pdf_fields_v1';
   const uid = () => Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
   const nowISO = () => new Date().toISOString();
-  const today = () => new Date().toISOString().slice(0,10);
   const norm = (s) => String(s ?? '').trim().toLowerCase();
   const escapeHtml = (s) =>
     String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
@@ -210,264 +197,13 @@
     localStorage.setItem(KEY, JSON.stringify(arr));
   }
 
-  // --- PDFs ---
+  // XRAY PDFs for baselines
   const PDFS = {
     carpet: "https://teamxray.com/downloads/95/x4f_2024_set_up_basic_for_ets_carpet.pdf",
     asphalt: "https://teamxray.com/downloads/20/x4f_2024_set_up_basic_for_ets_asphalt.pdf"
   };
 
-  // --- Full field map ---
-  // Coordinates are in % of sheet width/height (0..100). We render absolute px from the sheet box.
-  // type: 'text' | 'textarea' | 'check'
-  // id: unique key stored in setup.data[id] = value/boolean
-  const FIELDS = [
-    // HEADER (left top)
-    {id:'race', type:'text', x:4.2, y:6.2, w:28.8, h:2.0},
-    {id:'track', type:'text', x:4.2, y:9.0, w:28.8, h:2.0},
-    {id:'name', type:'text', x:4.2, y:11.8, w:20.0, h:2.0},
-    {id:'date', type:'text', x:24.8, y:11.8, w:8.2, h:2.0},
-
-    {id:'track_temp', type:'text', x:4.2, y:15.3, w:6.0, h:2.0},
-    {id:'qual_pos', type:'text', x:10.8, y:15.3, w:5.2, h:2.0},
-    {id:'final_pos', type:'text', x:16.6, y:15.3, w:5.2, h:2.0},
-    {id:'best_lap', type:'text', x:22.4, y:15.3, w:7.0, h:2.0},
-    {id:'laps', type:'text', x:30.2, y:15.3, w:3.0, h:2.0},
-    {id:'time', type:'text', x:33.6, y:15.3, w:3.0, h:2.0},
-
-    // TRACK block (surface/layout/traction)
-    {id:'track_surface_carpet', type:'check', x:20.6, y:22.5},
-    {id:'track_surface_asphalt', type:'check', x:28.0, y:22.5},
-
-    {id:'track_layout_technical', type:'check', x:13.0, y:25.2},
-    {id:'track_layout_mixed', type:'check', x:21.0, y:25.2},
-    {id:'track_layout_fast', type:'check', x:28.0, y:25.2},
-
-    {id:'traction_low', type:'check', x:14.0, y:27.8},
-    {id:'traction_medium', type:'check', x:22.0, y:27.8},
-    {id:'traction_high', type:'check', x:29.0, y:27.8},
-
-    // TRANSMISSION (left)
-    {id:'gear_diff_oil', type:'text', x:4.2, y:34.8, w:23.8, h:2.0},
-    {id:'pinion_t', type:'text', x:6.2, y:39.2, w:7.4, h:2.0},
-    {id:'spur_t', type:'text', x:16.0, y:39.2, w:7.4, h:2.0},
-    {id:'final_drive_ratio', type:'text', x:25.7, y:39.2, w:9.5, h:2.0},
-
-    // SHOCKS (left)
-    {id:'spring_front', type:'text', x:14.0, y:46.0, w:10.0, h:2.0},
-    {id:'spring_rear', type:'text', x:26.0, y:46.0, w:10.0, h:2.0},
-    {id:'oil_front', type:'text', x:14.0, y:48.7, w:10.0, h:2.0},
-    {id:'oil_rear', type:'text', x:26.0, y:48.7, w:10.0, h:2.0},
-    {id:'rebound_front', type:'text', x:14.0, y:51.4, w:10.0, h:2.0},
-    {id:'rebound_rear', type:'text', x:26.0, y:51.4, w:10.0, h:2.0},
-
-    {id:'foam_inserts_front_yes', type:'check', x:8.6, y:54.4},
-    {id:'foam_inserts_front_no', type:'check', x:13.2, y:54.4},
-    {id:'foam_inserts_rear_yes', type:'check', x:28.8, y:54.4},
-    {id:'foam_inserts_rear_no', type:'check', x:33.4, y:54.4},
-
-    // Pistons & shock length area (left mid)
-    {id:'piston_front_4holes', type:'check', x:9.2, y:59.4},
-    {id:'piston_front_pss', type:'check', x:9.2, y:62.2},
-    {id:'piston_rear_4holes', type:'check', x:29.6, y:59.4},
-    {id:'piston_rear_pss', type:'check', x:29.6, y:62.2},
-
-    {id:'shock_len_front', type:'text', x:7.0, y:66.9, w:10.8, h:2.0},
-    {id:'shock_len_rear', type:'text', x:25.7, y:66.9, w:10.8, h:2.0},
-
-    // Anti-roll bar thickness
-    {id:'arb_thk_front', type:'text', x:7.0, y:73.0, w:10.8, h:2.0},
-    {id:'arb_thk_rear', type:'text', x:25.7, y:73.0, w:10.8, h:2.0},
-
-    // Tires/additive
-    {id:'tires_front', type:'text', x:7.0, y:77.2, w:29.5, h:2.0},
-    {id:'additive', type:'text', x:7.0, y:79.7, w:29.5, h:2.0},
-    {id:'additive_timing', type:'text', x:7.0, y:82.2, w:29.5, h:2.0},
-
-    // Treated area boxes
-    {id:'treated_fl', type:'text', x:4.4, y:87.6, w:6.1, h:3.0},
-    {id:'treated_fr', type:'text', x:11.1, y:87.6, w:6.1, h:3.0},
-    {id:'treated_rl', type:'text', x:22.8, y:87.6, w:6.1, h:3.0},
-    {id:'treated_rr', type:'text', x:29.5, y:87.6, w:6.1, h:3.0},
-
-    // Weight / electronics
-    {id:'total_weight', type:'text', x:4.4, y:93.0, w:12.0, h:2.0},
-    {id:'weight_balance_front', type:'text', x:22.0, y:93.0, w:6.0, h:2.0},
-    {id:'weight_balance_rear', type:'text', x:30.0, y:93.0, w:6.0, h:2.0},
-
-    {id:'motor', type:'text', x:4.4, y:95.7, w:16.0, h:2.0},
-    {id:'esc', type:'text', x:4.4, y:98.1, w:16.0, h:2.0},
-    {id:'body', type:'text', x:4.4, y:100.5, w:16.0, h:2.0},
-
-    {id:'motor_timing', type:'text', x:21.2, y:95.7, w:15.0, h:2.0},
-    {id:'batteries', type:'text', x:21.2, y:98.1, w:15.0, h:2.0},
-    {id:'wing', type:'text', x:21.2, y:100.5, w:15.0, h:2.0},
-
-    // Body position / wing side plate / top deck etc (left lower)
-    {id:'body_pos_fl', type:'text', x:4.4, y:111.8, w:6.6, h:2.0},
-    {id:'body_pos_fr', type:'text', x:11.8, y:111.8, w:6.6, h:2.0},
-    {id:'body_pos_rl', type:'text', x:22.8, y:111.8, w:6.6, h:2.0},
-    {id:'body_pos_rr', type:'text', x:30.2, y:111.8, w:6.6, h:2.0},
-
-    {id:'wing_side_plate_yes', type:'check', x:27.8, y:123.0},
-    {id:'wing_side_plate_no', type:'check', x:32.2, y:123.0},
-
-    // COMMENTS big box (left bottom)
-    {id:'comments', type:'textarea', x:4.2, y:158.5, w:32.6, h:10.0},
-
-    // ---------------- RIGHT SIDE (car diagrams) ----------------
-    // Front caster
-    {id:'front_caster_3', type:'check', x:44.5, y:8.2},
-    {id:'front_caster_4', type:'check', x:46.3, y:8.2},
-    {id:'front_caster_5', type:'check', x:48.1, y:8.2},
-
-    // Bump steer, height, shim (front&rear suspension header)
-    {id:'bump_steer_mm', type:'text', x:53.6, y:10.4, w:4.4, h:2.0},
-    {id:'susp_height_mm', type:'text', x:59.3, y:10.4, w:4.4, h:2.0},
-    {id:'susp_shim_mm', type:'text', x:65.0, y:10.4, w:4.4, h:2.0},
-
-    // Rear caster options (0.5/1.5/2.5 + 3.5/4.5/5.5)
-    {id:'rear_caster_05', type:'check', x:76.2, y:8.2},
-    {id:'rear_caster_15', type:'check', x:78.0, y:8.2},
-    {id:'rear_caster_25', type:'check', x:79.8, y:8.2},
-    {id:'rear_caster_35', type:'check', x:82.4, y:8.2},
-    {id:'rear_caster_45', type:'check', x:84.2, y:8.2},
-    {id:'rear_caster_55', type:'check', x:86.0, y:8.2},
-
-    {id:'toe_gain_mm', type:'text', x:75.3, y:14.8, w:6.0, h:2.0},
-
-    // Ride height corner values (FF/FR/RF/RR areas)
-    {id:'ride_height_ff', type:'text', x:46.0, y:23.8, w:4.0, h:2.0},
-    {id:'ride_height_fr', type:'text', x:55.6, y:23.8, w:4.0, h:2.0},
-    {id:'ride_height_rf', type:'text', x:73.0, y:23.8, w:4.0, h:2.0},
-    {id:'ride_height_rr', type:'text', x:82.8, y:23.8, w:4.0, h:2.0},
-
-    // Servo saver / horn heights
-    {id:'servo_saver', type:'text', x:59.2, y:27.1, w:6.0, h:2.0},
-    {id:'servo_horn', type:'text', x:59.2, y:29.6, w:6.0, h:2.0},
-
-    // Front suspension camber + body stop
-    {id:'front_camber', type:'text', x:45.0, y:35.6, w:6.0, h:2.0},
-    {id:'body_stop_yes', type:'check', x:56.4, y:35.8},
-    {id:'body_stop_no', type:'check', x:60.1, y:35.8},
-    {id:'body_stop_mm', type:'text', x:58.6, y:37.8, w:5.0, h:2.0},
-
-    // Front brace yes/no
-    {id:'front_brace_yes', type:'check', x:56.0, y:44.0},
-    {id:'front_brace_no', type:'check', x:60.5, y:44.0},
-
-    // Front shock position 1/2
-    {id:'front_shock_pos_1', type:'check', x:63.4, y:43.4},
-    {id:'front_shock_pos_2', type:'check', x:65.5, y:43.4},
-
-    // Bulkhead shims yes/3mm/no + shim mm
-    {id:'bulkhead_yes', type:'check', x:56.0, y:49.6},
-    {id:'bulkhead_3mm', type:'check', x:60.0, y:49.6},
-    {id:'bulkhead_no', type:'check', x:64.2, y:49.6},
-    {id:'bulkhead_shim_mm', type:'text', x:57.4, y:52.0, w:10.0, h:2.0},
-
-    // Drive shaft 58/59 + bearing/blade
-    {id:'drive_58', type:'check', x:47.0, y:55.5},
-    {id:'drive_59', type:'check', x:50.2, y:55.5},
-    {id:'drive_bearing', type:'check', x:54.2, y:55.5},
-    {id:'drive_blade', type:'check', x:58.0, y:55.5},
-
-    // Front hub hard/graphite/alu
-    {id:'front_hub_hard', type:'check', x:87.0, y:38.0},
-    {id:'front_hub_graphite', type:'check', x:87.0, y:40.4},
-    {id:'front_hub_alu', type:'check', x:87.0, y:42.8},
-
-    // Downstop front (scale input box near bottom right of front suspension)
-    {id:'downstop_front', type:'text', x:88.1, y:58.7, w:6.6, h:2.0},
-
-    // Rear suspension camber
-    {id:'rear_camber', type:'text', x:45.0, y:62.6, w:6.0, h:2.0},
-
-    // Rear hub hard/graphite/alu
-    {id:'rear_hub_hard', type:'check', x:87.0, y:65.2},
-    {id:'rear_hub_graphite', type:'check', x:87.0, y:67.6},
-    {id:'rear_hub_alu', type:'check', x:87.0, y:70.0},
-
-    // Rear shock position 1/2
-    {id:'rear_shock_pos_1', type:'check', x:63.6, y:69.0},
-    {id:'rear_shock_pos_2', type:'check', x:65.7, y:69.0},
-
-    // Downstop rear
-    {id:'downstop_rear', type:'text', x:88.1, y:85.8, w:6.6, h:2.0},
-
-    // TOP VIEW: Toe out / Toe in fields
-    {id:'toe_out', type:'text', x:45.0, y:92.2, w:10.0, h:2.0},
-    {id:'toe_in', type:'text', x:76.0, y:92.2, w:10.0, h:2.0},
-
-    // Diff position up/down
-    {id:'diff_pos_up', type:'check', x:47.0, y:99.1},
-    {id:'diff_pos_down', type:'check', x:47.0, y:101.4},
-
-    // Steering arm & bridge (dual/single/bridge)
-    {id:'steer_arm_dual_std', type:'check', x:56.8, y:96.0},
-    {id:'steer_arm_single', type:'check', x:56.8, y:98.3},
-    {id:'steer_arm_bridge', type:'check', x:65.0, y:96.0},
-
-    // Shims box
-    {id:'topview_shims_mm', type:'text', x:58.2, y:103.0, w:8.8, h:2.0},
-
-    // Upper arm soft/medium left/right (two blocks)
-    {id:'upper_arm_left_soft', type:'check', x:44.5, y:109.8},
-    {id:'upper_arm_left_medium', type:'check', x:44.5, y:112.2},
-    {id:'upper_arm_right_soft', type:'check', x:90.1, y:109.8},
-    {id:'upper_arm_right_medium', type:'check', x:90.1, y:112.2},
-
-    // Hub offset left/right: STD / -0.5 / +0.5 and shim mm
-    {id:'hub_offset_left_std', type:'check', x:48.0, y:118.4},
-    {id:'hub_offset_left_m05', type:'check', x:52.2, y:118.4},
-    {id:'hub_offset_left_p05', type:'check', x:56.5, y:118.4},
-    {id:'hub_offset_left_shim', type:'text', x:60.0, y:118.2, w:5.0, h:2.0},
-
-    {id:'hub_offset_right_std', type:'check', x:73.6, y:118.4},
-    {id:'hub_offset_right_m05', type:'check', x:77.8, y:118.4},
-    {id:'hub_offset_right_p05', type:'check', x:82.1, y:118.4},
-    {id:'hub_offset_right_shim', type:'text', x:85.6, y:118.2, w:5.0, h:2.0},
-
-    // Ackermann shim
-    {id:'ackermann_shim', type:'text', x:59.0, y:114.8, w:8.0, h:2.0},
-
-    // Steering plate 8.0 / std / 7.5
-    {id:'steering_plate_80', type:'check', x:62.8, y:109.8},
-    {id:'steering_plate_std', type:'check', x:62.8, y:112.2},
-    {id:'steering_plate_75', type:'check', x:62.8, y:114.6},
-
-    // BOTTOM VIEW: weight left & right yes/no
-    {id:'weight_lr_yes', type:'check', x:46.8, y:126.7},
-    {id:'weight_lr_no', type:'check', x:51.4, y:126.7},
-
-    // Bumper weight yes/no
-    {id:'bumper_weight_yes', type:'check', x:46.8, y:134.0},
-    {id:'bumper_weight_no', type:'check', x:51.4, y:134.0},
-
-    // Front brace yes/no (bottom view)
-    {id:'bottom_front_brace_yes', type:'check', x:56.8, y:136.6},
-    {id:'bottom_front_brace_no', type:'check', x:61.4, y:136.6},
-
-    // Front arms medium/hard
-    {id:'front_arms_medium', type:'check', x:46.8, y:143.7},
-    {id:'front_arms_hard', type:'check', x:46.8, y:146.1},
-
-    // Steer lock / steer shim
-    {id:'steer_lock_deg', type:'text', x:60.8, y:128.8, w:9.0, h:2.0},
-    {id:'steer_shim_size', type:'text', x:60.8, y:133.1, w:9.0, h:2.0},
-
-    // T-brace alu/brass
-    {id:'tbrace_alu', type:'check', x:80.4, y:131.2},
-    {id:'tbrace_brass', type:'check', x:80.4, y:133.6},
-
-    // Chassis graphite
-    {id:'chassis_graphite', type:'check', x:70.2, y:146.3},
-
-    // Rear arms medium/hard
-    {id:'rear_arms_medium', type:'check', x:87.6, y:146.3},
-    {id:'rear_arms_hard', type:'check', x:87.6, y:148.7},
-  ];
-
-  // --- UI ---
+  // UI
   const baselineList = document.getElementById('baselineList');
   const myList = document.getElementById('myList');
   const emptyHint = document.getElementById('emptyHint');
@@ -479,175 +215,101 @@
   const btnSave = document.getElementById('btnSave');
   const btnDelete = document.getElementById('btnDelete');
 
-  const sheet = document.getElementById('sheet');
   const statusPill = document.getElementById('statusPill');
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('pdfCanvas');
+  const ctx = canvas.getContext('2d', { alpha:false });
 
-  // --- State ---
+  // State
   let all = loadAll().sort((a,b)=> (b.meta?.updatedAt||'').localeCompare(a.meta?.updatedAt||''));
   let current = null;
 
-  // --- Factory baseline payloads (fills some key values; rest blank but present) ---
-  const BASELINES = [
-    {
-      kind:'carpet',
-      title:'XRAY Basic ETS Carpet',
-      meta:'Carpet · High',
-      pdf: PDFS.carpet,
-      preset: {
-        track_surface_carpet:true,
-        traction_high:true,
-        gear_diff_oil:'200K',
-        spring_front:'2.5-2.8',
-        spring_rear:'2.7',
-        oil_front:'350',
-        oil_rear:'350',
-        arb_thk_front:'1.3',
-        arb_thk_rear:'1.2',
-        front_camber:'2',
-        rear_camber:'2'
-      }
-    },
-    {
-      kind:'asphalt',
-      title:'XRAY Basic ETS Asphalt',
-      meta:'Asphalt · Medium',
-      pdf: PDFS.asphalt,
-      preset: {
-        track_surface_asphalt:true,
-        traction_medium:true,
-        gear_diff_oil:'100K',
-        spring_front:'2.5-2.8',
-        spring_rear:'2.6',
-        oil_front:'350',
-        oil_rear:'350',
-        arb_thk_front:'1.2',
-        arb_thk_rear:'1.2',
-        front_camber:'2',
-        rear_camber:'2'
-      }
-    }
-  ];
+  let pdfDoc = null;
+  let page = null;
+  let viewport = null;
+  let widgetAnnots = []; // all widgets for page
+  let overlayNodes = [];
 
   function newBlankSetup(){
-    const data = {};
-    for (const f of FIELDS){
-      data[f.id] = (f.type === 'check') ? false : '';
-    }
     return {
       id: uid(),
-      meta: { title:'Ny setup', updatedAt: nowISO(), createdAt: nowISO() },
-      data
+      meta: { updatedAt: nowISO(), createdAt: nowISO() },
+      fields: {} // fieldName -> value OR for radios: fieldName -> selected exportValue
     };
   }
 
-  function applyPreset(setup, preset){
-    for (const [k,v] of Object.entries(preset || {})){
-      if (k in setup.data) setup.data[k] = v;
-    }
-    setup.meta.updatedAt = nowISO();
-  }
-
-  // --- Render sheet fields ---
-  function renderSheet(){
-    // remove old fields (keep image first)
-    const kids = Array.from(sheet.children).slice(1);
-    for (const k of kids) k.remove();
-
-    const box = sheet.getBoundingClientRect();
-    const W = box.width;
-    const H = box.height;
-
-    for (const f of FIELDS){
-      if (f.type === 'check'){
-        const el = document.createElement('input');
-        el.type = 'checkbox';
-        el.className = 'chk';
-        const left = (f.x/100)*W;
-        const top  = (f.y/170)*H; // sheet y normalization: the png is tall; we treat y in "pseudo-%"
-        el.style.left = left + 'px';
-        el.style.top  = top + 'px';
-
-        el.checked = !!(current?.data?.[f.id]);
-        el.onchange = () => {
-          if (!current) return;
-          current.data[f.id] = el.checked;
-          current.meta.updatedAt = nowISO();
-          refreshStatus();
-        };
-        sheet.appendChild(el);
-      } else {
-        const el = document.createElement(f.type === 'textarea' ? 'textarea' : 'input');
-        el.className = 'fld' + ((f.h && f.h < 2.1) ? ' small' : '');
-        if (f.type !== 'textarea') el.type = 'text';
-
-        const left = (f.x/100)*W;
-        const top  = (f.y/170)*H;
-        const ww   = (f.w/100)*W;
-        const hh   = (f.h/170)*H;
-
-        el.style.left = left + 'px';
-        el.style.top  = top + 'px';
-        el.style.width = ww + 'px';
-        el.style.height = Math.max(18, hh) + 'px';
-
-        el.value = String(current?.data?.[f.id] ?? '');
-        el.oninput = () => {
-          if (!current) return;
-          current.data[f.id] = el.value;
-          current.meta.updatedAt = nowISO();
-          refreshStatus();
-        };
-        sheet.appendChild(el);
-      }
-    }
-  }
-
-  // The Y-axis: this sheet is very tall; we normalize y against 170 "units" to keep numbers manageable.
-  // If you replace sheet.png with a different crop, we only need to adjust that 170 constant.
-  // (Keeping it internal to avoid manual edits all over.)
-
   function refreshStatus(){
+    if (!pdfDoc){
+      statusPill.textContent = 'Laddar sheet.pdf…';
+      return;
+    }
     if (!current){
       statusPill.textContent = 'Ingen setup vald';
       btnDelete.style.display = 'none';
       return;
     }
-    const t = current.data.track || current.data.trackName || current.data.track || current.data.trackName;
-    const name = (current.data.track || current.data.trackName || current.data.track || '').trim();
-    statusPill.textContent = name ? ('Vald: ' + name) : 'Vald setup (osparad titel)';
+    // Best effort: find common field names that might exist
+    const name =
+      current.fields["Name"] ||
+      current.fields["NAME"] ||
+      current.fields["name"] ||
+      current.fields["Track"] ||
+      current.fields["TRACK"] ||
+      current.fields["track"] ||
+      '';
+    statusPill.textContent = name ? ('Vald: ' + name) : 'Vald setup';
     btnDelete.style.display = '';
   }
 
-  function listLabel(s){
-    const track = (s.data.track || '').trim() || '(ingen track)';
-    const date = (s.data.date || '').trim();
-    const surf = s.data.track_surface_carpet ? 'Carpet' : (s.data.track_surface_asphalt ? 'Asphalt' : '');
-    const tr = s.data.traction_high ? 'High' : (s.data.traction_medium ? 'Medium' : (s.data.traction_low ? 'Low' : ''));
-    const meta = [date, surf, tr].filter(Boolean).join(' · ');
-    return { track, meta };
+  function deriveSurfaceTraction(setup){
+    const f = setup.fields || {};
+    const surface = (
+      (f["CARPET"] || f["Carpet"] || f["carpet"]) ? "carpet" :
+      (f["ASPHALT"] || f["Asphalt"] || f["asphalt"]) ? "asphalt" : ""
+    );
+
+    const traction = (
+      (f["HIGH"] || f["High"] || f["high"]) ? "high" :
+      (f["MEDIUM"] || f["Medium"] || f["medium"]) ? "medium" :
+      (f["LOW"] || f["Low"] || f["low"]) ? "low" : ""
+    );
+
+    return { surface, traction };
   }
 
-  function matchFilters(s){
+  function matchFilters(setup){
     const term = norm(q.value);
     const sf = norm(fSurface.value);
     const tf = norm(fTraction.value);
 
-    // derive surface/traction strings
-    const surface = s.data.track_surface_carpet ? 'carpet' : (s.data.track_surface_asphalt ? 'asphalt' : '');
-    const traction = s.data.traction_high ? 'high' : (s.data.traction_medium ? 'medium' : (s.data.traction_low ? 'low' : ''));
+    const {surface, traction} = deriveSurfaceTraction(setup);
 
     if (sf && !surface.includes(sf)) return false;
     if (tf && !traction.includes(tf)) return false;
 
     if (!term) return true;
+    return norm(JSON.stringify(setup.fields || {})).includes(term);
+  }
 
-    const hay = norm(JSON.stringify(s.data));
-    return hay.includes(term);
+  function listLabel(setup){
+    const f = setup.fields || {};
+    // pick some likely header fields, fallback
+    const track = (f["TRACK"] || f["Track"] || f["track"] || f["RACE"] || f["Race"] || f["race"] || "(ingen titel)");
+    const date  = (f["DATE"] || f["Date"] || f["date"] || "");
+    const {surface, traction} = deriveSurfaceTraction(setup);
+
+    const meta = [date, surface, traction].filter(Boolean).join(' · ');
+    return { track: String(track), meta };
   }
 
   function renderBaselines(){
     baselineList.innerHTML = '';
-    for (const b of BASELINES){
+    const baselines = [
+      { kind:'carpet', title:'XRAY Basic ETS Carpet', meta:'Carpet · High', pdf:PDFS.carpet },
+      { kind:'asphalt', title:'XRAY Basic ETS Asphalt', meta:'Asphalt · Medium', pdf:PDFS.asphalt },
+    ];
+
+    for (const b of baselines){
       const el = document.createElement('div');
       el.className = 'item';
 
@@ -662,10 +324,20 @@
       copy.textContent = 'Kopiera som ny';
       copy.onclick = () => {
         current = newBlankSetup();
-        applyPreset(current, b.preset);
+        // Baseline: vi sätter bara “surface/traction” om vi kan mappa dem via fältnamn.
+        // Resten får du fylla, exakt som på papper.
+        // (När vi ser fieldNames kan vi sätta fler baselinevärden exakt.)
+        if (b.kind === 'carpet'){
+          current.fields["CARPET"] = true;
+          current.fields["HIGH"] = true;
+        } else {
+          current.fields["ASPHALT"] = true;
+          current.fields["MEDIUM"] = true;
+        }
         all.unshift(current);
+        saveAll(all);
         renderMyList();
-        renderSheet();
+        populateOverlayFromCurrent();
         refreshStatus();
       };
 
@@ -704,7 +376,7 @@
       open.textContent = 'Öppna';
       open.onclick = () => {
         current = s;
-        renderSheet();
+        populateOverlayFromCurrent();
         refreshStatus();
       };
 
@@ -731,7 +403,8 @@
       current = newBlankSetup();
       all.unshift(current);
     }
-    // upsert
+    current.meta.updatedAt = nowISO();
+
     const arr = loadAll();
     const idx = arr.findIndex(x => x.id === current.id);
     if (idx >= 0) arr[idx] = current;
@@ -747,19 +420,212 @@
     saveAll(arr);
     current = null;
     renderMyList();
-    renderSheet();
+    populateOverlayFromCurrent();
     refreshStatus();
   }
 
-  // --- Events ---
+  // --- PDF rendering + widgets ---
+  async function loadPdfAndBuildOverlay(){
+    pdfDoc = await pdfjsLib.getDocument("./sheet.pdf").promise;
+    page = await pdfDoc.getPage(1);
+
+    // scale for readability; user can pinch-zoom anyway
+    const scale = 1.6;
+    viewport = page.getViewport({ scale });
+
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+
+    stage.style.width = canvas.width + "px";
+    stage.style.height = canvas.height + "px";
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    // Get all annotations (widgets are form fields)
+    const annots = await page.getAnnotations({ intent: "display" });
+    widgetAnnots = annots.filter(a => a.subtype === "Widget" && a.fieldName);
+
+    buildOverlayNodes(widgetAnnots);
+    statusPill.textContent = `Laddad: ${widgetAnnots.length} fält`;
+  }
+
+  function clearOverlay(){
+    for (const n of overlayNodes) n.remove();
+    overlayNodes = [];
+  }
+
+  function pdfRectToCss(rect){
+    // rect in PDF user space -> viewport space
+    // returns [x1,y1,x2,y2] in viewport coords
+    const r = pdfjsLib.Util.normalizeRect(rect);
+    const v = viewport.convertToViewportRectangle(r);
+    const [x1,y1,x2,y2] = v;
+    const left = Math.min(x1,x2);
+    const top = Math.min(y1,y2);
+    const width = Math.abs(x2-x1);
+    const height = Math.abs(y2-y1);
+    return { left, top, width, height };
+  }
+
+  function buildOverlayNodes(widgets){
+    clearOverlay();
+
+    // Build per-widget
+    for (const w of widgets){
+      const { left, top, width, height } = pdfRectToCss(w.rect);
+
+      // Some PDF fields are tiny. Make them still clickable.
+      const minW = 14, minH = 14;
+      const W = Math.max(width, minW);
+      const H = Math.max(height, minH);
+
+      // Field types:
+      // Tx (text), Btn (checkbox/radio), Ch (choice), Sig (signature)
+      const t = w.fieldType;
+
+      if (t === "Btn"){
+        if (w.radioButton){
+          const el = document.createElement('input');
+          el.type = 'radio';
+          el.className = 'rad';
+          el.name = w.fieldName;
+          el.value = w.exportValue || "On";
+
+          el.style.left = left + "px";
+          el.style.top = top + "px";
+          el.style.width = W + "px";
+          el.style.height = H + "px";
+
+          el.addEventListener('change', () => {
+            if (!current) return;
+            current.fields[w.fieldName] = el.value;
+            current.meta.updatedAt = nowISO();
+            refreshStatus();
+          });
+
+          stage.appendChild(el);
+          overlayNodes.push(el);
+        } else {
+          const el = document.createElement('input');
+          el.type = 'checkbox';
+          el.className = 'chk';
+          el.style.left = left + "px";
+          el.style.top = top + "px";
+          el.style.width = W + "px";
+          el.style.height = H + "px";
+
+          el.addEventListener('change', () => {
+            if (!current) return;
+            current.fields[w.fieldName] = el.checked;
+            current.meta.updatedAt = nowISO();
+            refreshStatus();
+          });
+
+          stage.appendChild(el);
+          overlayNodes.push(el);
+        }
+      } else if (t === "Tx"){
+        // Multiline if flag 4096 set OR w.multiLine
+        const isMulti = !!w.multiLine || ((w.fieldFlags || 0) & 4096) === 4096;
+        const el = document.createElement(isMulti ? 'textarea' : 'input');
+        if (!isMulti) el.type = 'text';
+        el.className = 'fld' + (H < 20 ? ' small' : '');
+
+        el.style.left = left + "px";
+        el.style.top = top + "px";
+        el.style.width = W + "px";
+        el.style.height = Math.max(18, H) + "px";
+
+        el.addEventListener('input', () => {
+          if (!current) return;
+          current.fields[w.fieldName] = el.value;
+          current.meta.updatedAt = nowISO();
+          refreshStatus();
+        });
+
+        stage.appendChild(el);
+        overlayNodes.push(el);
+      } else {
+        // Other field types: create a small text box
+        const el = document.createElement('input');
+        el.type = 'text';
+        el.className = 'fld small';
+
+        el.style.left = left + "px";
+        el.style.top = top + "px";
+        el.style.width = W + "px";
+        el.style.height = Math.max(18, H) + "px";
+
+        el.addEventListener('input', () => {
+          if (!current) return;
+          current.fields[w.fieldName] = el.value;
+          current.meta.updatedAt = nowISO();
+          refreshStatus();
+        });
+
+        stage.appendChild(el);
+        overlayNodes.push(el);
+      }
+    }
+
+    // After creating, populate with current values (if any)
+    populateOverlayFromCurrent();
+  }
+
+  function populateOverlayFromCurrent(){
+    // If no setup selected, clear values to empty/false
+    const f = current?.fields || {};
+
+    // Map widgets -> nodes in same iteration order:
+    // overlayNodes includes different element types, but we can re-walk widgetAnnots and find matching node by DOM position:
+    // easiest: just query all inputs/textareas and set based on name/fieldName.
+    const nodes = stage.querySelectorAll('input, textarea');
+
+    for (const el of nodes){
+      if (el.type === 'radio'){
+        const fieldName = el.name;
+        const wanted = f[fieldName];
+        el.checked = wanted ? (String(wanted) === String(el.value)) : false;
+      } else if (el.type === 'checkbox'){
+        // checkbox: we stored boolean on fieldName, but some PDFs reuse same fieldName
+        // If reused, user will still toggle them correctly per fieldName.
+        const fieldName = findNearestFieldNameForElement(el);
+        el.checked = !!f[fieldName];
+      } else {
+        const fieldName = findNearestFieldNameForElement(el);
+        el.value = String(f[fieldName] ?? '');
+      }
+    }
+
+    // helper: for check/text we infer fieldName by hit-testing against widget rects
+    function findNearestFieldNameForElement(el){
+      // we stored in DOM as positioned element, so match by rect overlap with widget rects
+      const r = el.getBoundingClientRect();
+      const sr = stage.getBoundingClientRect();
+      const x = (r.left - sr.left) + r.width/2;
+      const y = (r.top - sr.top) + r.height/2;
+
+      // find widget whose viewport rect contains point
+      for (const w of widgetAnnots){
+        const css = pdfRectToCss(w.rect);
+        if (x >= css.left && x <= css.left + css.width && y >= css.top && y <= css.top + css.height){
+          return w.fieldName;
+        }
+      }
+      // fallback
+      return el.name || el.id || '';
+    }
+  }
+
+  // Events
   btnNew.onclick = () => {
     current = newBlankSetup();
     all.unshift(current);
+    saveAll(all);
     renderMyList();
-    renderSheet();
+    populateOverlayFromCurrent();
     refreshStatus();
   };
-
   btnSave.onclick = hardSave;
   btnDelete.onclick = hardDelete;
 
@@ -767,17 +633,24 @@
   fSurface.addEventListener('input', renderMyList);
   fTraction.addEventListener('input', renderMyList);
 
-  // --- Init ---
+  // Init
   renderBaselines();
   renderMyList();
-
-  // start with blank setup selected
   current = newBlankSetup();
-  renderSheet();
+  all.unshift(current);
+  saveAll(all);
   refreshStatus();
 
-  // re-render fields on resize (positions)
-  window.addEventListener('resize', () => { if (current) renderSheet(); });
+  loadPdfAndBuildOverlay()
+    .then(() => {
+      refreshStatus();
+      populateOverlayFromCurrent();
+    })
+    .catch((e) => {
+      statusPill.textContent = "Kunde inte läsa sheet.pdf";
+      console.error(e);
+      alert("Kunde inte läsa sheet.pdf. Testa att ladda om.");
+    });
 
 })();
 </script>
