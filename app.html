@@ -6,57 +6,764 @@
   <title>setup-organizer</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#111217">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#111217">
-
 
   <style>
+    :root{
+      --bg:#0f0f10;
+      --card:#16171a;
+      --muted:#a8abb2;
+      --text:#f2f2f3;
+      --line:#2a2c33;
+      --accent:#4f7cff;
+      --danger:#fb7185;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: system-ui, sans-serif;
-      background:#0f0f10;
-      color:white;
-      padding:20px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
     }
-    h1{
-      font-size:24px;
-      margin-bottom:20px;
+    header{
+      position:sticky; top:0; z-index:10;
+      background:rgba(15,15,16,.92);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
     }
-    .section{
-      background:#1b1c20;
-      padding:16px;
-      border-radius:14px;
-      margin-bottom:20px;
+    .wrap{max-width:1100px; margin:0 auto; padding:14px;}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    h1{font-size:18px; margin:0}
+    .sub{color:var(--muted); font-size:12px; margin-top:2px}
+    .spacer{flex:1}
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--line);
+      background:var(--card);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
     }
-    .item{
+    .btn.primary{border-color:transparent; background:linear-gradient(180deg, #2f5eff, #2247c9)}
+    .btn.ghost{background:transparent}
+    .btn.danger{border-color:transparent; background:linear-gradient(180deg, #881337, #500724)}
+
+    input, textarea{
+      width:100%;
+      padding:10px 11px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#0c0d10;
+      color:var(--text);
+      outline:none;
+      font-size:14px;
+    }
+    textarea{min-height:90px; resize:vertical}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+
+    .two{display:grid; grid-template-columns: 1fr; gap:12px}
+    @media (min-width: 980px){ .two{grid-template-columns: 1.1fr .9fr;} }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
       padding:12px;
-      background:#2a2c33;
-      border-radius:10px;
-      margin-top:10px;
     }
+    .card h2{font-size:14px; margin:0 0 6px}
+    .meta{font-size:12px; color:var(--muted)}
+    .hr{height:1px; background:var(--line); margin:12px 0}
+
+    .list{display:flex; flex-direction:column; gap:10px}
+    .item{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:12px; border-radius:14px; border:1px solid var(--line); background:#121318;
+    }
+    .item strong{display:block; font-size:14px}
+    .item small{color:var(--muted)}
+    .actions{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+
+    details{
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:hidden;
+      background:#121318;
+    }
+    summary{
+      cursor:pointer;
+      list-style:none;
+      padding:12px;
+      font-weight:800;
+      display:flex; align-items:center; gap:10px;
+    }
+    summary::-webkit-details-marker{display:none}
+    details > .content{padding:0 12px 12px}
+
+    .hint{font-size:12px; color:var(--muted); margin:6px 0 0}
   </style>
 </head>
 <body>
-  <h1>setup-organizer</h1>
-
-  <div class="section">
-    <h2>Factory baselines</h2>
-
-    <div class="item">
-      XRAY Basic ETS Carpet
-    </div>
-
-    <div class="item">
-      XRAY Basic ETS Asphalt
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>Mina setuper</h2>
-    <div class="item">
-      Inga setuper ännu
+<header>
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <h1>setup-organizer</h1>
+        <div class="sub">X4F 2024 · Offline · Lokal lagring</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn ghost" id="btnHome">Hem</button>
+      <button class="btn primary" id="btnNew">Ny setup</button>
     </div>
   </div>
+</header>
 
+<main class="wrap">
+  <div class="two">
+
+    <!-- LEFT: Lists -->
+    <section class="card">
+      <div class="row">
+        <div>
+          <h2>Factory baselines</h2>
+          <div class="meta">XRAY originalsetuper (låsta)</div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="list" id="baselineList"></div>
+
+      <div class="hr"></div>
+
+      <div class="row">
+        <div>
+          <h2>Mina setuper</h2>
+          <div class="meta">Sök och filtrera</div>
+        </div>
+        <div class="spacer"></div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <input id="q" placeholder="Sök: bana, däck, kommentar...">
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <input id="fSurface" placeholder="Filter underlag (carpet/asphalt)">
+        <input id="fTraction" placeholder="Filter grepp (low/medium/high)">
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="list" id="myList"></div>
+      <div class="hint" id="emptyHint" style="display:none">Inga setuper än. Tryck “Ny setup” eller kopiera en baseline.</div>
+    </section>
+
+    <!-- RIGHT: Editor -->
+    <section class="card" id="editorCard" style="display:none">
+      <div class="row">
+        <div>
+          <h2 id="editorTitle">Ny setup</h2>
+          <div class="meta" id="editorMeta">Sparas lokalt som en ny setup.</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn danger" id="btnDelete" style="display:none">Radera</button>
+        <button class="btn primary" id="btnSave">Spara</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <label>Bana</label>
+      <input id="trackName" placeholder="t.ex. Växjö Carpet A">
+
+      <div class="row">
+        <div style="flex:1">
+          <label>Underlag</label>
+          <input id="trackSurface" placeholder="Carpet/Asphalt">
+        </div>
+        <div style="flex:1">
+          <label>Grepp</label>
+          <input id="trackTraction" placeholder="Low/Medium/High">
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1">
+          <label>Datum</label>
+          <input id="date" type="date">
+        </div>
+        <div style="flex:1">
+          <label>Temp (°C)</label>
+          <input id="temp" placeholder="t.ex. 21">
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1">
+          <label>Best lap</label>
+          <input id="bestLap" placeholder="t.ex. 14.82">
+        </div>
+        <div style="flex:1">
+          <label>Resultat</label>
+          <input id="result" placeholder="t.ex. P2 kval, P1 final">
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <!-- Minimal structured fields (fri inmatning) -->
+      <details open>
+        <summary>Transmission</summary>
+        <div class="content">
+          <label>Gear diff oil</label>
+          <input data-field="trans.diffOil" placeholder="t.ex. 200K">
+          <div class="row">
+            <div style="flex:1">
+              <label>Pinion</label>
+              <input data-field="trans.pinion" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Spur</label>
+              <input data-field="trans.spur" placeholder="">
+            </div>
+          </div>
+          <label>FDR / Utväxling</label>
+          <input data-field="trans.fdr" placeholder="">
+          <label>Kommentar</label>
+          <input data-field="trans.note" placeholder="">
+        </div>
+      </details>
+
+      <div style="height:10px"></div>
+
+      <details>
+        <summary>Shocks</summary>
+        <div class="content">
+          <div class="row">
+            <div style="flex:1">
+              <label>Springs front</label>
+              <input data-field="shocks.springF" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Springs rear</label>
+              <input data-field="shocks.springR" placeholder="">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label>Oil front</label>
+              <input data-field="shocks.oilF" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Oil rear</label>
+              <input data-field="shocks.oilR" placeholder="">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label>Anti-roll bar front</label>
+              <input data-field="shocks.arbF" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Anti-roll bar rear</label>
+              <input data-field="shocks.arbR" placeholder="">
+            </div>
+          </div>
+          <label>Kommentar</label>
+          <input data-field="shocks.note" placeholder="">
+        </div>
+      </details>
+
+      <div style="height:10px"></div>
+
+      <details>
+        <summary>Suspension Front</summary>
+        <div class="content">
+          <div class="row">
+            <div style="flex:1">
+              <label>Camber</label>
+              <input data-field="front.camber" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Toe</label>
+              <input data-field="front.toe" placeholder="">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label>Caster</label>
+              <input data-field="front.caster" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Ride height</label>
+              <input data-field="front.rideHeight" placeholder="">
+            </div>
+          </div>
+          <label>Droop/Downstop</label>
+          <input data-field="front.droop" placeholder="">
+          <label>Kommentar</label>
+          <input data-field="front.note" placeholder="">
+        </div>
+      </details>
+
+      <div style="height:10px"></div>
+
+      <details>
+        <summary>Suspension Rear</summary>
+        <div class="content">
+          <div class="row">
+            <div style="flex:1">
+              <label>Camber</label>
+              <input data-field="rear.camber" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Toe</label>
+              <input data-field="rear.toe" placeholder="">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label>Rear caster</label>
+              <input data-field="rear.caster" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Ride height</label>
+              <input data-field="rear.rideHeight" placeholder="">
+            </div>
+          </div>
+          <label>Droop/Downstop</label>
+          <input data-field="rear.droop" placeholder="">
+          <label>Kommentar</label>
+          <input data-field="rear.note" placeholder="">
+        </div>
+      </details>
+
+      <div style="height:10px"></div>
+
+      <details>
+        <summary>Däck & Additive</summary>
+        <div class="content">
+          <div class="row">
+            <div style="flex:1">
+              <label>Däck fram</label>
+              <input data-field="tires.front" placeholder="">
+            </div>
+            <div style="flex:1">
+              <label>Däck bak</label>
+              <input data-field="tires.rear" placeholder="">
+            </div>
+          </div>
+          <label>Additive / Kommentar</label>
+          <input data-field="tires.note" placeholder="">
+        </div>
+      </details>
+
+      <div style="height:10px"></div>
+
+      <details open>
+        <summary>Comments</summary>
+        <div class="content">
+          <label>Körkänsla / Noteringar</label>
+          <textarea id="comments" placeholder="t.ex. push i mitten, bättre rotation med ..."></textarea>
+        </div>
+      </details>
+
+      <div class="hr"></div>
+      <button class="btn ghost" id="btnCloseEditor">Stäng</button>
+    </section>
+
+  </div>
+</main>
+
+<script>
+(() => {
+  // SW
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  }
+
+  // Storage
+  const KEY = 'setup_organizer_x4f24_v1';
+
+  const uid = () => Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+  const nowISO = () => new Date().toISOString();
+  const today = () => new Date().toISOString().slice(0,10);
+
+  function loadAll(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch{ return []; }
+  }
+  function saveAll(arr){
+    localStorage.setItem(KEY, JSON.stringify(arr));
+  }
+
+  function norm(s){ return String(s ?? '').trim().toLowerCase(); }
+  function escapeHtml(s){
+    return String(s ?? '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#039;");
+  }
+
+  function getByPath(obj, path){
+    const parts = path.split('.');
+    let cur = obj;
+    for (const p of parts){
+      if (!cur || typeof cur !== 'object') return '';
+      cur = cur[p];
+    }
+    return (cur ?? '');
+  }
+  function setByPath(obj, path, value){
+    const parts = path.split('.');
+    let cur = obj;
+    for (let i=0;i<parts.length;i++){
+      const p = parts[i];
+      if (i === parts.length-1){
+        cur[p] = value;
+      } else {
+        if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {};
+        cur = cur[p];
+      }
+    }
+  }
+
+  const fieldEls = () => Array.from(document.querySelectorAll('[data-field]'));
+
+  // XRAY PDFs
+  const PDFS = {
+    carpet: "https://teamxray.com/downloads/95/x4f_2024_set_up_basic_for_ets_carpet.pdf",
+    asphalt: "https://teamxray.com/downloads/20/x4f_2024_set_up_basic_for_ets_asphalt.pdf"
+  };
+
+  // Factory templates (värden du kan finjustera senare)
+  const TEMPLATES = {
+    carpet: {
+      meta: { trackSurface: 'Carpet', trackTraction: 'High' },
+      fields: {
+        trans: { diffOil: '200K' },
+        shocks:{ springF:'2.5-2.8', springR:'2.7', oilF:'350', oilR:'350', arbF:'1.3', arbR:'1.2' },
+        front: { camber:'2', toe:'Toe out 1.0', caster:'4', rideHeight:'5.0', droop:'Downstop 6.2' },
+        rear:  { camber:'2', toe:'Toe in 1.5', caster:'1.5', rideHeight:'5.6', droop:'Downstop 4.4' }
+      },
+      comments: 'XRAY Factory baseline: Basic ETS Carpet.'
+    },
+    asphalt: {
+      meta: { trackSurface: 'Asphalt', trackTraction: 'Medium' },
+      fields: {
+        trans: { diffOil: '100K' },
+        shocks:{ springF:'2.5-2.8', springR:'2.6', oilF:'350', oilR:'350', arbF:'1.2', arbR:'1.2' },
+        front: { camber:'2', toe:'Toe out 1.0', caster:'4', rideHeight:'5.2', droop:'Downstop 6.0' },
+        rear:  { camber:'2', toe:'Toe in 1.5', caster:'1.5', rideHeight:'5.6', droop:'Downstop 4.2' }
+      },
+      comments: 'XRAY Factory baseline: Basic ETS Asphalt.'
+    }
+  };
+
+  // UI refs
+  const baselineList = document.getElementById('baselineList');
+  const myList = document.getElementById('myList');
+  const emptyHint = document.getElementById('emptyHint');
+
+  const q = document.getElementById('q');
+  const fSurface = document.getElementById('fSurface');
+  const fTraction = document.getElementById('fTraction');
+
+  const editorCard = document.getElementById('editorCard');
+  const editorTitle = document.getElementById('editorTitle');
+  const editorMeta = document.getElementById('editorMeta');
+
+  const btnHome = document.getElementById('btnHome');
+  const btnNew = document.getElementById('btnNew');
+  const btnSave = document.getElementById('btnSave');
+  const btnDelete = document.getElementById('btnDelete');
+  const btnCloseEditor = document.getElementById('btnCloseEditor');
+
+  const trackName = document.getElementById('trackName');
+  const trackSurface = document.getElementById('trackSurface');
+  const trackTraction = document.getElementById('trackTraction');
+  const dateEl = document.getElementById('date');
+  const tempEl = document.getElementById('temp');
+  const bestLapEl = document.getElementById('bestLap');
+  const resultEl = document.getElementById('result');
+  const commentsEl = document.getElementById('comments');
+
+  // state
+  let all = loadAll();
+  let editingId = null;
+
+  function showEditor(show){
+    editorCard.style.display = show ? '' : 'none';
+  }
+
+  function clearEditor(){
+    editingId = null;
+    trackName.value = '';
+    trackSurface.value = '';
+    trackTraction.value = '';
+    dateEl.value = today();
+    tempEl.value = '';
+    bestLapEl.value = '';
+    resultEl.value = '';
+    commentsEl.value = '';
+    for (const el of fieldEls()) el.value = '';
+  }
+
+  function fillEditor(setup){
+    const m = setup.meta || {};
+    trackName.value = m.trackName || '';
+    trackSurface.value = m.trackSurface || '';
+    trackTraction.value = m.trackTraction || '';
+    dateEl.value = (m.date || '').slice(0,10) || today();
+    tempEl.value = m.temp || '';
+    bestLapEl.value = m.bestLap || '';
+    resultEl.value = m.result || '';
+    commentsEl.value = m.comments || '';
+
+    for (const el of fieldEls()){
+      const path = el.getAttribute('data-field');
+      el.value = getByPath(setup.fields || {}, path) || '';
+    }
+  }
+
+  function readEditor(){
+    const s = {
+      id: editingId || uid(),
+      meta: {
+        car: 'XRAY X4F 2024',
+        trackName: trackName.value.trim(),
+        trackSurface: trackSurface.value.trim(),
+        trackTraction: trackTraction.value.trim(),
+        date: dateEl.value,
+        temp: tempEl.value.trim(),
+        bestLap: bestLapEl.value.trim(),
+        result: resultEl.value.trim(),
+        comments: commentsEl.value.trim(),
+        updatedAt: nowISO(),
+        createdAt: editingId ? (all.find(x => x.id === editingId)?.meta?.createdAt || nowISO()) : nowISO(),
+      },
+      fields: {}
+    };
+    for (const el of fieldEls()){
+      const path = el.getAttribute('data-field');
+      setByPath(s.fields, path, el.value.trim());
+    }
+    return s;
+  }
+
+  function applyTemplate(kind){
+    const tpl = TEMPLATES[kind];
+    if (!tpl) return;
+
+    // meta
+    trackSurface.value = tpl.meta?.trackSurface || trackSurface.value;
+    trackTraction.value = tpl.meta?.trackTraction || trackTraction.value;
+
+    // fields
+    for (const el of fieldEls()){
+      const path = el.getAttribute('data-field');
+      const v = getByPath(tpl.fields || {}, path);
+      if (v !== '' && v !== undefined) el.value = v;
+    }
+
+    // comments
+    if (tpl.comments) commentsEl.value = tpl.comments;
+
+    // date default
+    if (!dateEl.value) dateEl.value = today();
+  }
+
+  function openFromBaseline(kind){
+    editorTitle.textContent = 'Ny setup (från baseline)';
+    editorMeta.textContent = 'Du kan ändra och spara som din egen setup.';
+    btnDelete.style.display = 'none';
+    clearEditor();
+    applyTemplate(kind);
+    showEditor(true);
+    // scroll into view on mobile
+    editorCard.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  function matchFilters(setup){
+    const term = norm(q.value);
+    const sf = norm(fSurface.value);
+    const tf = norm(fTraction.value);
+
+    const m = setup.meta || {};
+    const surface = norm(m.trackSurface);
+    const traction = norm(m.trackTraction);
+
+    if (sf && !surface.includes(sf)) return false;
+    if (tf && !traction.includes(tf)) return false;
+
+    if (!term) return true;
+
+    const keyHay = [
+      m.trackName, m.trackSurface, m.trackTraction, m.temp, m.bestLap, m.result, m.comments,
+      JSON.stringify(setup.fields || {})
+    ].map(norm).join(' | ');
+
+    return keyHay.includes(term);
+  }
+
+  function fmtDate(d){
+    if (!d) return '-';
+    try{
+      const dt = new Date(d);
+      if (Number.isNaN(dt.getTime())) return d;
+      return dt.toLocaleDateString('sv-SE');
+    }catch{ return d; }
+  }
+
+  function renderBaselines(){
+    baselineList.innerHTML = '';
+
+    const baselines = [
+      { kind:'carpet', title:'XRAY Basic ETS Carpet', pdf:PDFS.carpet, meta:'Carpet · High', },
+      { kind:'asphalt', title:'XRAY Basic ETS Asphalt', pdf:PDFS.asphalt, meta:'Asphalt · Medium', },
+    ];
+
+    for (const b of baselines){
+      const el = document.createElement('div');
+      el.className = 'item';
+
+      const left = document.createElement('div');
+      left.innerHTML = `<strong>${escapeHtml(b.title)}</strong><small>${escapeHtml(b.meta)}</small>`;
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+
+      const btnCopy = document.createElement('button');
+      btnCopy.className = 'btn';
+      btnCopy.textContent = 'Kopiera som ny';
+      btnCopy.onclick = () => openFromBaseline(b.kind);
+
+      const btnPdf = document.createElement('button');
+      btnPdf.className = 'btn ghost';
+      btnPdf.textContent = 'Öppna PDF';
+      btnPdf.onclick = () => window.open(b.pdf, '_blank');
+
+      actions.append(btnCopy, btnPdf);
+      el.append(left, actions);
+      baselineList.appendChild(el);
+    }
+  }
+
+  function renderMyList(){
+    all = loadAll()
+      .sort((a,b) => (b.meta?.updatedAt || '').localeCompare(a.meta?.updatedAt || ''));
+
+    const filtered = all.filter(matchFilters);
+
+    myList.innerHTML = '';
+    emptyHint.style.display = filtered.length ? 'none' : 'block';
+
+    for (const s of filtered){
+      const el = document.createElement('div');
+      el.className = 'item';
+
+      const m = s.meta || {};
+      const title = document.createElement('div');
+      const t = m.trackName || '(ingen bana)';
+      const d = fmtDate(m.date || m.createdAt);
+      const surf = m.trackSurface ? ` · ${m.trackSurface}` : '';
+      const tr = m.trackTraction ? ` · ${m.trackTraction}` : '';
+      title.innerHTML = `<strong>${escapeHtml(t)}</strong><small>${escapeHtml(d + surf + tr)}</small>`;
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+
+      const bOpen = document.createElement('button');
+      bOpen.className = 'btn';
+      bOpen.textContent = 'Öppna';
+      bOpen.onclick = () => {
+        editingId = s.id;
+        editorTitle.textContent = 'Redigera setup';
+        editorMeta.textContent = 'Sparas lokalt.';
+        btnDelete.style.display = '';
+        fillEditor(s);
+        showEditor(true);
+        editorCard.scrollIntoView({ behavior:'smooth', block:'start' });
+      };
+
+      const bCopy = document.createElement('button');
+      bCopy.className = 'btn ghost';
+      bCopy.textContent = 'Kopiera';
+      bCopy.onclick = () => {
+        // copy as new
+        editingId = null;
+        editorTitle.textContent = 'Ny setup (kopierad)';
+        editorMeta.textContent = 'Du kopierar och sparar som ny.';
+        btnDelete.style.display = 'none';
+        fillEditor(s);
+        dateEl.value = today();
+        showEditor(true);
+        editorCard.scrollIntoView({ behavior:'smooth', block:'start' });
+      };
+
+      actions.append(bOpen, bCopy);
+      el.append(title, actions);
+      myList.appendChild(el);
+    }
+  }
+
+  function render(){
+    renderBaselines();
+    renderMyList();
+  }
+
+  // Buttons
+  btnHome.onclick = () => { showEditor(false); editingId = null; };
+  btnNew.onclick = () => {
+    editingId = null;
+    editorTitle.textContent = 'Ny setup';
+    editorMeta.textContent = 'Sparas lokalt.';
+    btnDelete.style.display = 'none';
+    clearEditor();
+    showEditor(true);
+    editorCard.scrollIntoView({ behavior:'smooth', block:'start' });
+  };
+
+  btnCloseEditor.onclick = () => { showEditor(false); editingId = null; };
+
+  btnSave.onclick = () => {
+    const s = readEditor();
+    const arr = loadAll();
+    const idx = arr.findIndex(x => x.id === s.id);
+    if (idx >= 0) arr[idx] = s;
+    else arr.push(s);
+    saveAll(arr);
+    editingId = s.id;
+    btnDelete.style.display = '';
+    render();
+    alert('Sparad.');
+  };
+
+  btnDelete.onclick = () => {
+    if (!editingId) return;
+    const arr = loadAll().filter(x => x.id !== editingId);
+    saveAll(arr);
+    editingId = null;
+    showEditor(false);
+    render();
+  };
+
+  // Search/filter
+  q.addEventListener('input', renderMyList);
+  fSurface.addEventListener('input', renderMyList);
+  fTraction.addEventListener('input', renderMyList);
+
+  // Start
+  render();
+})();
+</script>
 </body>
 </html>
