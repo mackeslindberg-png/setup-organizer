@@ -19,91 +19,89 @@
       --radius:16px;
     }
     *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:var(--bg);
-      color:var(--text);
-    }
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
     header{
-      position:sticky; top:0; z-index:10;
+      position:sticky;top:0;z-index:10;
       background:rgba(15,15,16,.92);
-      backdrop-filter: blur(10px);
+      backdrop-filter:blur(10px);
       border-bottom:1px solid var(--line);
     }
-    .wrap{max-width:1100px; margin:0 auto; padding:14px;}
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    h1{font-size:18px; margin:0}
-    .sub{color:var(--muted); font-size:12px; margin-top:2px}
+    .wrap{max-width:1200px;margin:0 auto;padding:12px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    h1{font-size:18px;margin:0}
+    .sub{color:var(--muted);font-size:12px;margin-top:2px}
     .spacer{flex:1}
-
     .btn{
-      appearance:none;
-      border:1px solid var(--line);
-      background:var(--card);
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:700;
-      font-size:13px;
+      appearance:none;border:1px solid var(--line);background:var(--card);color:var(--text);
+      padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:800;font-size:13px;
     }
-    .btn.primary{border-color:transparent; background:linear-gradient(180deg, #2f5eff, #2247c9)}
+    .btn.primary{border-color:transparent;background:linear-gradient(180deg,#2f5eff,#2247c9)}
     .btn.ghost{background:transparent}
-    .btn.danger{border-color:transparent; background:linear-gradient(180deg, #881337, #500724)}
-
-    input, textarea{
-      width:100%;
-      padding:10px 11px;
-      border-radius:12px;
-      border:1px solid var(--line);
-      background:#0c0d10;
-      color:var(--text);
-      outline:none;
-      font-size:14px;
+    .btn.danger{border-color:transparent;background:linear-gradient(180deg,#881337,#500724)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+    .meta{font-size:12px;color:var(--muted)}
+    .hr{height:1px;background:var(--line);margin:10px 0}
+    .two{display:grid;grid-template-columns: 380px 1fr;gap:12px}
+    @media (max-width: 980px){ .two{grid-template-columns:1fr;}}
+    input, textarea, select{
+      width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);
+      background:#0c0d10;color:var(--text);outline:none;font-size:14px;
     }
-    textarea{min-height:90px; resize:vertical}
-    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
-
-    .two{display:grid; grid-template-columns: 1fr; gap:12px}
-    @media (min-width: 980px){ .two{grid-template-columns: 1.1fr .9fr;} }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:12px;
-    }
-    .card h2{font-size:14px; margin:0 0 6px}
-    .meta{font-size:12px; color:var(--muted)}
-    .hr{height:1px; background:var(--line); margin:12px 0}
-
-    .list{display:flex; flex-direction:column; gap:10px}
+    textarea{min-height:80px;resize:vertical}
+    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    .list{display:flex;flex-direction:column;gap:10px}
     .item{
-      display:flex; gap:10px; align-items:flex-start;
-      padding:12px; border-radius:14px; border:1px solid var(--line); background:#121318;
+      display:flex;gap:10px;align-items:flex-start;
+      padding:12px;border-radius:14px;border:1px solid var(--line);background:#121318;
     }
-    .item strong{display:block; font-size:14px}
-    .item small{color:var(--muted)}
-    .actions{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+    .item strong{display:block;font-size:14px}
+    .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:12px}
 
-    details{
+    /* Sheet */
+    .sheetWrap{
+      background:#0b0c10;
       border:1px solid var(--line);
-      border-radius:14px;
-      overflow:hidden;
-      background:#121318;
+      border-radius:16px;
+      padding:10px;
     }
-    summary{
-      cursor:pointer;
-      list-style:none;
-      padding:12px;
-      font-weight:800;
-      display:flex; align-items:center; gap:10px;
+    .sheetScroller{
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      border-radius:12px;
+      background:#0b0c10;
     }
-    summary::-webkit-details-marker{display:none}
-    details > .content{padding:0 12px 12px}
-
-    .hint{font-size:12px; color:var(--muted); margin:6px 0 0}
+    .sheet{
+      position:relative;
+      width:1100px;           /* fasta “arbetsbredd” */
+      max-width:none;
+      transform-origin: top left;
+    }
+    .sheet img{
+      width:100%;
+      height:auto;
+      display:block;
+      border-radius:10px;
+    }
+    .fld{
+      position:absolute;
+      font: 12px system-ui, sans-serif;
+      padding:2px 4px;
+      border:1px solid rgba(79,124,255,.55);
+      background:rgba(12,13,16,.65);
+      color:var(--text);
+      border-radius:6px;
+      outline:none;
+    }
+    .fld.small{font-size:11px;padding:1px 3px}
+    .chk{
+      position:absolute;
+      width:16px;height:16px;
+      accent-color: var(--accent);
+      background:rgba(12,13,16,.65);
+      border-radius:4px;
+    }
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
   </style>
 </head>
 <body>
@@ -112,11 +110,12 @@
     <div class="row">
       <div>
         <h1>setup-organizer</h1>
-        <div class="sub">X4F 2024 · Offline · Lokal lagring</div>
+        <div class="sub">X4F 2024 · Sheet mode · Offline (localStorage)</div>
       </div>
       <div class="spacer"></div>
-      <button class="btn ghost" id="btnHome">Hem</button>
-      <button class="btn primary" id="btnNew">Ny setup</button>
+      <button class="btn ghost" id="btnNew">Ny setup</button>
+      <button class="btn primary" id="btnSave">Spara</button>
+      <button class="btn danger" id="btnDelete" style="display:none">Radera</button>
     </div>
   </div>
 </header>
@@ -124,12 +123,12 @@
 <main class="wrap">
   <div class="two">
 
-    <!-- LEFT: Lists -->
+    <!-- Left panel -->
     <section class="card">
       <div class="row">
         <div>
-          <h2>Factory baselines</h2>
-          <div class="meta">XRAY originalsetuper (låsta)</div>
+          <div style="font-weight:900">Factory baselines</div>
+          <div class="meta">Låsta mallar</div>
         </div>
       </div>
 
@@ -141,16 +140,14 @@
 
       <div class="row">
         <div>
-          <h2>Mina setuper</h2>
-          <div class="meta">Sök och filtrera</div>
+          <div style="font-weight:900">Mina setuper</div>
+          <div class="meta">Sök + filter</div>
         </div>
-        <div class="spacer"></div>
       </div>
 
       <div class="row" style="margin-top:10px">
         <input id="q" placeholder="Sök: bana, däck, kommentar...">
       </div>
-
       <div class="row" style="margin-top:10px">
         <input id="fSurface" placeholder="Filter underlag (carpet/asphalt)">
         <input id="fTraction" placeholder="Filter grepp (low/medium/high)">
@@ -159,220 +156,28 @@
       <div class="hr"></div>
 
       <div class="list" id="myList"></div>
-      <div class="hint" id="emptyHint" style="display:none">Inga setuper än. Tryck “Ny setup” eller kopiera en baseline.</div>
+      <div class="meta" id="emptyHint" style="display:none">Inga setuper än.</div>
+
+      <div class="hr"></div>
+
+      <div class="meta">
+        Tips: zooma i webbläsaren om du vill. Sheet är byggd för att se ut exakt som XRAY-bladet.
+      </div>
     </section>
 
-    <!-- RIGHT: Editor -->
-    <section class="card" id="editorCard" style="display:none">
-      <div class="row">
-        <div>
-          <h2 id="editorTitle">Ny setup</h2>
-          <div class="meta" id="editorMeta">Sparas lokalt som en ny setup.</div>
-        </div>
-        <div class="spacer"></div>
-        <button class="btn danger" id="btnDelete" style="display:none">Radera</button>
-        <button class="btn primary" id="btnSave">Spara</button>
+    <!-- Right panel: Sheet -->
+    <section class="sheetWrap">
+      <div class="toolbar" style="margin-bottom:10px">
+        <span class="pill" id="statusPill">Ingen setup vald</span>
+        <span class="pill">Bakgrund: sheet.png</span>
       </div>
 
-      <div class="hr"></div>
-
-      <label>Bana</label>
-      <input id="trackName" placeholder="t.ex. Växjö Carpet A">
-
-      <div class="row">
-        <div style="flex:1">
-          <label>Underlag</label>
-          <input id="trackSurface" placeholder="Carpet/Asphalt">
-        </div>
-        <div style="flex:1">
-          <label>Grepp</label>
-          <input id="trackTraction" placeholder="Low/Medium/High">
+      <div class="sheetScroller">
+        <div class="sheet" id="sheet">
+          <img src="./sheet.png" alt="X4F 2024 setup sheet">
+          <!-- Fields injected by JS -->
         </div>
       </div>
-
-      <div class="row">
-        <div style="flex:1">
-          <label>Datum</label>
-          <input id="date" type="date">
-        </div>
-        <div style="flex:1">
-          <label>Temp (°C)</label>
-          <input id="temp" placeholder="t.ex. 21">
-        </div>
-      </div>
-
-      <div class="row">
-        <div style="flex:1">
-          <label>Best lap</label>
-          <input id="bestLap" placeholder="t.ex. 14.82">
-        </div>
-        <div style="flex:1">
-          <label>Resultat</label>
-          <input id="result" placeholder="t.ex. P2 kval, P1 final">
-        </div>
-      </div>
-
-      <div class="hr"></div>
-
-      <!-- Minimal structured fields (fri inmatning) -->
-      <details open>
-        <summary>Transmission</summary>
-        <div class="content">
-          <label>Gear diff oil</label>
-          <input data-field="trans.diffOil" placeholder="t.ex. 200K">
-          <div class="row">
-            <div style="flex:1">
-              <label>Pinion</label>
-              <input data-field="trans.pinion" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Spur</label>
-              <input data-field="trans.spur" placeholder="">
-            </div>
-          </div>
-          <label>FDR / Utväxling</label>
-          <input data-field="trans.fdr" placeholder="">
-          <label>Kommentar</label>
-          <input data-field="trans.note" placeholder="">
-        </div>
-      </details>
-
-      <div style="height:10px"></div>
-
-      <details>
-        <summary>Shocks</summary>
-        <div class="content">
-          <div class="row">
-            <div style="flex:1">
-              <label>Springs front</label>
-              <input data-field="shocks.springF" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Springs rear</label>
-              <input data-field="shocks.springR" placeholder="">
-            </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Oil front</label>
-              <input data-field="shocks.oilF" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Oil rear</label>
-              <input data-field="shocks.oilR" placeholder="">
-            </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Anti-roll bar front</label>
-              <input data-field="shocks.arbF" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Anti-roll bar rear</label>
-              <input data-field="shocks.arbR" placeholder="">
-            </div>
-          </div>
-          <label>Kommentar</label>
-          <input data-field="shocks.note" placeholder="">
-        </div>
-      </details>
-
-      <div style="height:10px"></div>
-
-      <details>
-        <summary>Suspension Front</summary>
-        <div class="content">
-          <div class="row">
-            <div style="flex:1">
-              <label>Camber</label>
-              <input data-field="front.camber" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Toe</label>
-              <input data-field="front.toe" placeholder="">
-            </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Caster</label>
-              <input data-field="front.caster" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Ride height</label>
-              <input data-field="front.rideHeight" placeholder="">
-            </div>
-          </div>
-          <label>Droop/Downstop</label>
-          <input data-field="front.droop" placeholder="">
-          <label>Kommentar</label>
-          <input data-field="front.note" placeholder="">
-        </div>
-      </details>
-
-      <div style="height:10px"></div>
-
-      <details>
-        <summary>Suspension Rear</summary>
-        <div class="content">
-          <div class="row">
-            <div style="flex:1">
-              <label>Camber</label>
-              <input data-field="rear.camber" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Toe</label>
-              <input data-field="rear.toe" placeholder="">
-            </div>
-          </div>
-          <div class="row">
-            <div style="flex:1">
-              <label>Rear caster</label>
-              <input data-field="rear.caster" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Ride height</label>
-              <input data-field="rear.rideHeight" placeholder="">
-            </div>
-          </div>
-          <label>Droop/Downstop</label>
-          <input data-field="rear.droop" placeholder="">
-          <label>Kommentar</label>
-          <input data-field="rear.note" placeholder="">
-        </div>
-      </details>
-
-      <div style="height:10px"></div>
-
-      <details>
-        <summary>Däck & Additive</summary>
-        <div class="content">
-          <div class="row">
-            <div style="flex:1">
-              <label>Däck fram</label>
-              <input data-field="tires.front" placeholder="">
-            </div>
-            <div style="flex:1">
-              <label>Däck bak</label>
-              <input data-field="tires.rear" placeholder="">
-            </div>
-          </div>
-          <label>Additive / Kommentar</label>
-          <input data-field="tires.note" placeholder="">
-        </div>
-      </details>
-
-      <div style="height:10px"></div>
-
-      <details open>
-        <summary>Comments</summary>
-        <div class="content">
-          <label>Körkänsla / Noteringar</label>
-          <textarea id="comments" placeholder="t.ex. push i mitten, bättre rotation med ..."></textarea>
-        </div>
-      </details>
-
-      <div class="hr"></div>
-      <button class="btn ghost" id="btnCloseEditor">Stäng</button>
     </section>
 
   </div>
@@ -380,17 +185,19 @@
 
 <script>
 (() => {
-  // SW
+  // --- SW ---
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
 
-  // Storage
-  const KEY = 'setup_organizer_x4f24_v1';
-
+  // --- Storage ---
+  const KEY = 'setup_organizer_x4f24_sheet_v1';
   const uid = () => Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
   const nowISO = () => new Date().toISOString();
   const today = () => new Date().toISOString().slice(0,10);
+  const norm = (s) => String(s ?? '').trim().toLowerCase();
+  const escapeHtml = (s) =>
+    String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
 
   function loadAll(){
     try{
@@ -403,235 +210,444 @@
     localStorage.setItem(KEY, JSON.stringify(arr));
   }
 
-  function norm(s){ return String(s ?? '').trim().toLowerCase(); }
-  function escapeHtml(s){
-    return String(s ?? '')
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'","&#039;");
-  }
-
-  function getByPath(obj, path){
-    const parts = path.split('.');
-    let cur = obj;
-    for (const p of parts){
-      if (!cur || typeof cur !== 'object') return '';
-      cur = cur[p];
-    }
-    return (cur ?? '');
-  }
-  function setByPath(obj, path, value){
-    const parts = path.split('.');
-    let cur = obj;
-    for (let i=0;i<parts.length;i++){
-      const p = parts[i];
-      if (i === parts.length-1){
-        cur[p] = value;
-      } else {
-        if (!cur[p] || typeof cur[p] !== 'object') cur[p] = {};
-        cur = cur[p];
-      }
-    }
-  }
-
-  const fieldEls = () => Array.from(document.querySelectorAll('[data-field]'));
-
-  // XRAY PDFs
+  // --- PDFs ---
   const PDFS = {
     carpet: "https://teamxray.com/downloads/95/x4f_2024_set_up_basic_for_ets_carpet.pdf",
     asphalt: "https://teamxray.com/downloads/20/x4f_2024_set_up_basic_for_ets_asphalt.pdf"
   };
 
-  // Factory templates (värden du kan finjustera senare)
-  const TEMPLATES = {
-    carpet: {
-      meta: { trackSurface: 'Carpet', trackTraction: 'High' },
-      fields: {
-        trans: { diffOil: '200K' },
-        shocks:{ springF:'2.5-2.8', springR:'2.7', oilF:'350', oilR:'350', arbF:'1.3', arbR:'1.2' },
-        front: { camber:'2', toe:'Toe out 1.0', caster:'4', rideHeight:'5.0', droop:'Downstop 6.2' },
-        rear:  { camber:'2', toe:'Toe in 1.5', caster:'1.5', rideHeight:'5.6', droop:'Downstop 4.4' }
-      },
-      comments: 'XRAY Factory baseline: Basic ETS Carpet.'
-    },
-    asphalt: {
-      meta: { trackSurface: 'Asphalt', trackTraction: 'Medium' },
-      fields: {
-        trans: { diffOil: '100K' },
-        shocks:{ springF:'2.5-2.8', springR:'2.6', oilF:'350', oilR:'350', arbF:'1.2', arbR:'1.2' },
-        front: { camber:'2', toe:'Toe out 1.0', caster:'4', rideHeight:'5.2', droop:'Downstop 6.0' },
-        rear:  { camber:'2', toe:'Toe in 1.5', caster:'1.5', rideHeight:'5.6', droop:'Downstop 4.2' }
-      },
-      comments: 'XRAY Factory baseline: Basic ETS Asphalt.'
-    }
-  };
+  // --- Full field map ---
+  // Coordinates are in % of sheet width/height (0..100). We render absolute px from the sheet box.
+  // type: 'text' | 'textarea' | 'check'
+  // id: unique key stored in setup.data[id] = value/boolean
+  const FIELDS = [
+    // HEADER (left top)
+    {id:'race', type:'text', x:4.2, y:6.2, w:28.8, h:2.0},
+    {id:'track', type:'text', x:4.2, y:9.0, w:28.8, h:2.0},
+    {id:'name', type:'text', x:4.2, y:11.8, w:20.0, h:2.0},
+    {id:'date', type:'text', x:24.8, y:11.8, w:8.2, h:2.0},
 
-  // UI refs
+    {id:'track_temp', type:'text', x:4.2, y:15.3, w:6.0, h:2.0},
+    {id:'qual_pos', type:'text', x:10.8, y:15.3, w:5.2, h:2.0},
+    {id:'final_pos', type:'text', x:16.6, y:15.3, w:5.2, h:2.0},
+    {id:'best_lap', type:'text', x:22.4, y:15.3, w:7.0, h:2.0},
+    {id:'laps', type:'text', x:30.2, y:15.3, w:3.0, h:2.0},
+    {id:'time', type:'text', x:33.6, y:15.3, w:3.0, h:2.0},
+
+    // TRACK block (surface/layout/traction)
+    {id:'track_surface_carpet', type:'check', x:20.6, y:22.5},
+    {id:'track_surface_asphalt', type:'check', x:28.0, y:22.5},
+
+    {id:'track_layout_technical', type:'check', x:13.0, y:25.2},
+    {id:'track_layout_mixed', type:'check', x:21.0, y:25.2},
+    {id:'track_layout_fast', type:'check', x:28.0, y:25.2},
+
+    {id:'traction_low', type:'check', x:14.0, y:27.8},
+    {id:'traction_medium', type:'check', x:22.0, y:27.8},
+    {id:'traction_high', type:'check', x:29.0, y:27.8},
+
+    // TRANSMISSION (left)
+    {id:'gear_diff_oil', type:'text', x:4.2, y:34.8, w:23.8, h:2.0},
+    {id:'pinion_t', type:'text', x:6.2, y:39.2, w:7.4, h:2.0},
+    {id:'spur_t', type:'text', x:16.0, y:39.2, w:7.4, h:2.0},
+    {id:'final_drive_ratio', type:'text', x:25.7, y:39.2, w:9.5, h:2.0},
+
+    // SHOCKS (left)
+    {id:'spring_front', type:'text', x:14.0, y:46.0, w:10.0, h:2.0},
+    {id:'spring_rear', type:'text', x:26.0, y:46.0, w:10.0, h:2.0},
+    {id:'oil_front', type:'text', x:14.0, y:48.7, w:10.0, h:2.0},
+    {id:'oil_rear', type:'text', x:26.0, y:48.7, w:10.0, h:2.0},
+    {id:'rebound_front', type:'text', x:14.0, y:51.4, w:10.0, h:2.0},
+    {id:'rebound_rear', type:'text', x:26.0, y:51.4, w:10.0, h:2.0},
+
+    {id:'foam_inserts_front_yes', type:'check', x:8.6, y:54.4},
+    {id:'foam_inserts_front_no', type:'check', x:13.2, y:54.4},
+    {id:'foam_inserts_rear_yes', type:'check', x:28.8, y:54.4},
+    {id:'foam_inserts_rear_no', type:'check', x:33.4, y:54.4},
+
+    // Pistons & shock length area (left mid)
+    {id:'piston_front_4holes', type:'check', x:9.2, y:59.4},
+    {id:'piston_front_pss', type:'check', x:9.2, y:62.2},
+    {id:'piston_rear_4holes', type:'check', x:29.6, y:59.4},
+    {id:'piston_rear_pss', type:'check', x:29.6, y:62.2},
+
+    {id:'shock_len_front', type:'text', x:7.0, y:66.9, w:10.8, h:2.0},
+    {id:'shock_len_rear', type:'text', x:25.7, y:66.9, w:10.8, h:2.0},
+
+    // Anti-roll bar thickness
+    {id:'arb_thk_front', type:'text', x:7.0, y:73.0, w:10.8, h:2.0},
+    {id:'arb_thk_rear', type:'text', x:25.7, y:73.0, w:10.8, h:2.0},
+
+    // Tires/additive
+    {id:'tires_front', type:'text', x:7.0, y:77.2, w:29.5, h:2.0},
+    {id:'additive', type:'text', x:7.0, y:79.7, w:29.5, h:2.0},
+    {id:'additive_timing', type:'text', x:7.0, y:82.2, w:29.5, h:2.0},
+
+    // Treated area boxes
+    {id:'treated_fl', type:'text', x:4.4, y:87.6, w:6.1, h:3.0},
+    {id:'treated_fr', type:'text', x:11.1, y:87.6, w:6.1, h:3.0},
+    {id:'treated_rl', type:'text', x:22.8, y:87.6, w:6.1, h:3.0},
+    {id:'treated_rr', type:'text', x:29.5, y:87.6, w:6.1, h:3.0},
+
+    // Weight / electronics
+    {id:'total_weight', type:'text', x:4.4, y:93.0, w:12.0, h:2.0},
+    {id:'weight_balance_front', type:'text', x:22.0, y:93.0, w:6.0, h:2.0},
+    {id:'weight_balance_rear', type:'text', x:30.0, y:93.0, w:6.0, h:2.0},
+
+    {id:'motor', type:'text', x:4.4, y:95.7, w:16.0, h:2.0},
+    {id:'esc', type:'text', x:4.4, y:98.1, w:16.0, h:2.0},
+    {id:'body', type:'text', x:4.4, y:100.5, w:16.0, h:2.0},
+
+    {id:'motor_timing', type:'text', x:21.2, y:95.7, w:15.0, h:2.0},
+    {id:'batteries', type:'text', x:21.2, y:98.1, w:15.0, h:2.0},
+    {id:'wing', type:'text', x:21.2, y:100.5, w:15.0, h:2.0},
+
+    // Body position / wing side plate / top deck etc (left lower)
+    {id:'body_pos_fl', type:'text', x:4.4, y:111.8, w:6.6, h:2.0},
+    {id:'body_pos_fr', type:'text', x:11.8, y:111.8, w:6.6, h:2.0},
+    {id:'body_pos_rl', type:'text', x:22.8, y:111.8, w:6.6, h:2.0},
+    {id:'body_pos_rr', type:'text', x:30.2, y:111.8, w:6.6, h:2.0},
+
+    {id:'wing_side_plate_yes', type:'check', x:27.8, y:123.0},
+    {id:'wing_side_plate_no', type:'check', x:32.2, y:123.0},
+
+    // COMMENTS big box (left bottom)
+    {id:'comments', type:'textarea', x:4.2, y:158.5, w:32.6, h:10.0},
+
+    // ---------------- RIGHT SIDE (car diagrams) ----------------
+    // Front caster
+    {id:'front_caster_3', type:'check', x:44.5, y:8.2},
+    {id:'front_caster_4', type:'check', x:46.3, y:8.2},
+    {id:'front_caster_5', type:'check', x:48.1, y:8.2},
+
+    // Bump steer, height, shim (front&rear suspension header)
+    {id:'bump_steer_mm', type:'text', x:53.6, y:10.4, w:4.4, h:2.0},
+    {id:'susp_height_mm', type:'text', x:59.3, y:10.4, w:4.4, h:2.0},
+    {id:'susp_shim_mm', type:'text', x:65.0, y:10.4, w:4.4, h:2.0},
+
+    // Rear caster options (0.5/1.5/2.5 + 3.5/4.5/5.5)
+    {id:'rear_caster_05', type:'check', x:76.2, y:8.2},
+    {id:'rear_caster_15', type:'check', x:78.0, y:8.2},
+    {id:'rear_caster_25', type:'check', x:79.8, y:8.2},
+    {id:'rear_caster_35', type:'check', x:82.4, y:8.2},
+    {id:'rear_caster_45', type:'check', x:84.2, y:8.2},
+    {id:'rear_caster_55', type:'check', x:86.0, y:8.2},
+
+    {id:'toe_gain_mm', type:'text', x:75.3, y:14.8, w:6.0, h:2.0},
+
+    // Ride height corner values (FF/FR/RF/RR areas)
+    {id:'ride_height_ff', type:'text', x:46.0, y:23.8, w:4.0, h:2.0},
+    {id:'ride_height_fr', type:'text', x:55.6, y:23.8, w:4.0, h:2.0},
+    {id:'ride_height_rf', type:'text', x:73.0, y:23.8, w:4.0, h:2.0},
+    {id:'ride_height_rr', type:'text', x:82.8, y:23.8, w:4.0, h:2.0},
+
+    // Servo saver / horn heights
+    {id:'servo_saver', type:'text', x:59.2, y:27.1, w:6.0, h:2.0},
+    {id:'servo_horn', type:'text', x:59.2, y:29.6, w:6.0, h:2.0},
+
+    // Front suspension camber + body stop
+    {id:'front_camber', type:'text', x:45.0, y:35.6, w:6.0, h:2.0},
+    {id:'body_stop_yes', type:'check', x:56.4, y:35.8},
+    {id:'body_stop_no', type:'check', x:60.1, y:35.8},
+    {id:'body_stop_mm', type:'text', x:58.6, y:37.8, w:5.0, h:2.0},
+
+    // Front brace yes/no
+    {id:'front_brace_yes', type:'check', x:56.0, y:44.0},
+    {id:'front_brace_no', type:'check', x:60.5, y:44.0},
+
+    // Front shock position 1/2
+    {id:'front_shock_pos_1', type:'check', x:63.4, y:43.4},
+    {id:'front_shock_pos_2', type:'check', x:65.5, y:43.4},
+
+    // Bulkhead shims yes/3mm/no + shim mm
+    {id:'bulkhead_yes', type:'check', x:56.0, y:49.6},
+    {id:'bulkhead_3mm', type:'check', x:60.0, y:49.6},
+    {id:'bulkhead_no', type:'check', x:64.2, y:49.6},
+    {id:'bulkhead_shim_mm', type:'text', x:57.4, y:52.0, w:10.0, h:2.0},
+
+    // Drive shaft 58/59 + bearing/blade
+    {id:'drive_58', type:'check', x:47.0, y:55.5},
+    {id:'drive_59', type:'check', x:50.2, y:55.5},
+    {id:'drive_bearing', type:'check', x:54.2, y:55.5},
+    {id:'drive_blade', type:'check', x:58.0, y:55.5},
+
+    // Front hub hard/graphite/alu
+    {id:'front_hub_hard', type:'check', x:87.0, y:38.0},
+    {id:'front_hub_graphite', type:'check', x:87.0, y:40.4},
+    {id:'front_hub_alu', type:'check', x:87.0, y:42.8},
+
+    // Downstop front (scale input box near bottom right of front suspension)
+    {id:'downstop_front', type:'text', x:88.1, y:58.7, w:6.6, h:2.0},
+
+    // Rear suspension camber
+    {id:'rear_camber', type:'text', x:45.0, y:62.6, w:6.0, h:2.0},
+
+    // Rear hub hard/graphite/alu
+    {id:'rear_hub_hard', type:'check', x:87.0, y:65.2},
+    {id:'rear_hub_graphite', type:'check', x:87.0, y:67.6},
+    {id:'rear_hub_alu', type:'check', x:87.0, y:70.0},
+
+    // Rear shock position 1/2
+    {id:'rear_shock_pos_1', type:'check', x:63.6, y:69.0},
+    {id:'rear_shock_pos_2', type:'check', x:65.7, y:69.0},
+
+    // Downstop rear
+    {id:'downstop_rear', type:'text', x:88.1, y:85.8, w:6.6, h:2.0},
+
+    // TOP VIEW: Toe out / Toe in fields
+    {id:'toe_out', type:'text', x:45.0, y:92.2, w:10.0, h:2.0},
+    {id:'toe_in', type:'text', x:76.0, y:92.2, w:10.0, h:2.0},
+
+    // Diff position up/down
+    {id:'diff_pos_up', type:'check', x:47.0, y:99.1},
+    {id:'diff_pos_down', type:'check', x:47.0, y:101.4},
+
+    // Steering arm & bridge (dual/single/bridge)
+    {id:'steer_arm_dual_std', type:'check', x:56.8, y:96.0},
+    {id:'steer_arm_single', type:'check', x:56.8, y:98.3},
+    {id:'steer_arm_bridge', type:'check', x:65.0, y:96.0},
+
+    // Shims box
+    {id:'topview_shims_mm', type:'text', x:58.2, y:103.0, w:8.8, h:2.0},
+
+    // Upper arm soft/medium left/right (two blocks)
+    {id:'upper_arm_left_soft', type:'check', x:44.5, y:109.8},
+    {id:'upper_arm_left_medium', type:'check', x:44.5, y:112.2},
+    {id:'upper_arm_right_soft', type:'check', x:90.1, y:109.8},
+    {id:'upper_arm_right_medium', type:'check', x:90.1, y:112.2},
+
+    // Hub offset left/right: STD / -0.5 / +0.5 and shim mm
+    {id:'hub_offset_left_std', type:'check', x:48.0, y:118.4},
+    {id:'hub_offset_left_m05', type:'check', x:52.2, y:118.4},
+    {id:'hub_offset_left_p05', type:'check', x:56.5, y:118.4},
+    {id:'hub_offset_left_shim', type:'text', x:60.0, y:118.2, w:5.0, h:2.0},
+
+    {id:'hub_offset_right_std', type:'check', x:73.6, y:118.4},
+    {id:'hub_offset_right_m05', type:'check', x:77.8, y:118.4},
+    {id:'hub_offset_right_p05', type:'check', x:82.1, y:118.4},
+    {id:'hub_offset_right_shim', type:'text', x:85.6, y:118.2, w:5.0, h:2.0},
+
+    // Ackermann shim
+    {id:'ackermann_shim', type:'text', x:59.0, y:114.8, w:8.0, h:2.0},
+
+    // Steering plate 8.0 / std / 7.5
+    {id:'steering_plate_80', type:'check', x:62.8, y:109.8},
+    {id:'steering_plate_std', type:'check', x:62.8, y:112.2},
+    {id:'steering_plate_75', type:'check', x:62.8, y:114.6},
+
+    // BOTTOM VIEW: weight left & right yes/no
+    {id:'weight_lr_yes', type:'check', x:46.8, y:126.7},
+    {id:'weight_lr_no', type:'check', x:51.4, y:126.7},
+
+    // Bumper weight yes/no
+    {id:'bumper_weight_yes', type:'check', x:46.8, y:134.0},
+    {id:'bumper_weight_no', type:'check', x:51.4, y:134.0},
+
+    // Front brace yes/no (bottom view)
+    {id:'bottom_front_brace_yes', type:'check', x:56.8, y:136.6},
+    {id:'bottom_front_brace_no', type:'check', x:61.4, y:136.6},
+
+    // Front arms medium/hard
+    {id:'front_arms_medium', type:'check', x:46.8, y:143.7},
+    {id:'front_arms_hard', type:'check', x:46.8, y:146.1},
+
+    // Steer lock / steer shim
+    {id:'steer_lock_deg', type:'text', x:60.8, y:128.8, w:9.0, h:2.0},
+    {id:'steer_shim_size', type:'text', x:60.8, y:133.1, w:9.0, h:2.0},
+
+    // T-brace alu/brass
+    {id:'tbrace_alu', type:'check', x:80.4, y:131.2},
+    {id:'tbrace_brass', type:'check', x:80.4, y:133.6},
+
+    // Chassis graphite
+    {id:'chassis_graphite', type:'check', x:70.2, y:146.3},
+
+    // Rear arms medium/hard
+    {id:'rear_arms_medium', type:'check', x:87.6, y:146.3},
+    {id:'rear_arms_hard', type:'check', x:87.6, y:148.7},
+  ];
+
+  // --- UI ---
   const baselineList = document.getElementById('baselineList');
   const myList = document.getElementById('myList');
   const emptyHint = document.getElementById('emptyHint');
-
   const q = document.getElementById('q');
   const fSurface = document.getElementById('fSurface');
   const fTraction = document.getElementById('fTraction');
 
-  const editorCard = document.getElementById('editorCard');
-  const editorTitle = document.getElementById('editorTitle');
-  const editorMeta = document.getElementById('editorMeta');
-
-  const btnHome = document.getElementById('btnHome');
   const btnNew = document.getElementById('btnNew');
   const btnSave = document.getElementById('btnSave');
   const btnDelete = document.getElementById('btnDelete');
-  const btnCloseEditor = document.getElementById('btnCloseEditor');
 
-  const trackName = document.getElementById('trackName');
-  const trackSurface = document.getElementById('trackSurface');
-  const trackTraction = document.getElementById('trackTraction');
-  const dateEl = document.getElementById('date');
-  const tempEl = document.getElementById('temp');
-  const bestLapEl = document.getElementById('bestLap');
-  const resultEl = document.getElementById('result');
-  const commentsEl = document.getElementById('comments');
+  const sheet = document.getElementById('sheet');
+  const statusPill = document.getElementById('statusPill');
 
-  // state
-  let all = loadAll();
-  let editingId = null;
+  // --- State ---
+  let all = loadAll().sort((a,b)=> (b.meta?.updatedAt||'').localeCompare(a.meta?.updatedAt||''));
+  let current = null;
 
-  function showEditor(show){
-    editorCard.style.display = show ? '' : 'none';
-  }
-
-  function clearEditor(){
-    editingId = null;
-    trackName.value = '';
-    trackSurface.value = '';
-    trackTraction.value = '';
-    dateEl.value = today();
-    tempEl.value = '';
-    bestLapEl.value = '';
-    resultEl.value = '';
-    commentsEl.value = '';
-    for (const el of fieldEls()) el.value = '';
-  }
-
-  function fillEditor(setup){
-    const m = setup.meta || {};
-    trackName.value = m.trackName || '';
-    trackSurface.value = m.trackSurface || '';
-    trackTraction.value = m.trackTraction || '';
-    dateEl.value = (m.date || '').slice(0,10) || today();
-    tempEl.value = m.temp || '';
-    bestLapEl.value = m.bestLap || '';
-    resultEl.value = m.result || '';
-    commentsEl.value = m.comments || '';
-
-    for (const el of fieldEls()){
-      const path = el.getAttribute('data-field');
-      el.value = getByPath(setup.fields || {}, path) || '';
+  // --- Factory baseline payloads (fills some key values; rest blank but present) ---
+  const BASELINES = [
+    {
+      kind:'carpet',
+      title:'XRAY Basic ETS Carpet',
+      meta:'Carpet · High',
+      pdf: PDFS.carpet,
+      preset: {
+        track_surface_carpet:true,
+        traction_high:true,
+        gear_diff_oil:'200K',
+        spring_front:'2.5-2.8',
+        spring_rear:'2.7',
+        oil_front:'350',
+        oil_rear:'350',
+        arb_thk_front:'1.3',
+        arb_thk_rear:'1.2',
+        front_camber:'2',
+        rear_camber:'2'
+      }
+    },
+    {
+      kind:'asphalt',
+      title:'XRAY Basic ETS Asphalt',
+      meta:'Asphalt · Medium',
+      pdf: PDFS.asphalt,
+      preset: {
+        track_surface_asphalt:true,
+        traction_medium:true,
+        gear_diff_oil:'100K',
+        spring_front:'2.5-2.8',
+        spring_rear:'2.6',
+        oil_front:'350',
+        oil_rear:'350',
+        arb_thk_front:'1.2',
+        arb_thk_rear:'1.2',
+        front_camber:'2',
+        rear_camber:'2'
+      }
     }
-  }
+  ];
 
-  function readEditor(){
-    const s = {
-      id: editingId || uid(),
-      meta: {
-        car: 'XRAY X4F 2024',
-        trackName: trackName.value.trim(),
-        trackSurface: trackSurface.value.trim(),
-        trackTraction: trackTraction.value.trim(),
-        date: dateEl.value,
-        temp: tempEl.value.trim(),
-        bestLap: bestLapEl.value.trim(),
-        result: resultEl.value.trim(),
-        comments: commentsEl.value.trim(),
-        updatedAt: nowISO(),
-        createdAt: editingId ? (all.find(x => x.id === editingId)?.meta?.createdAt || nowISO()) : nowISO(),
-      },
-      fields: {}
+  function newBlankSetup(){
+    const data = {};
+    for (const f of FIELDS){
+      data[f.id] = (f.type === 'check') ? false : '';
+    }
+    return {
+      id: uid(),
+      meta: { title:'Ny setup', updatedAt: nowISO(), createdAt: nowISO() },
+      data
     };
-    for (const el of fieldEls()){
-      const path = el.getAttribute('data-field');
-      setByPath(s.fields, path, el.value.trim());
+  }
+
+  function applyPreset(setup, preset){
+    for (const [k,v] of Object.entries(preset || {})){
+      if (k in setup.data) setup.data[k] = v;
     }
-    return s;
+    setup.meta.updatedAt = nowISO();
   }
 
-  function applyTemplate(kind){
-    const tpl = TEMPLATES[kind];
-    if (!tpl) return;
+  // --- Render sheet fields ---
+  function renderSheet(){
+    // remove old fields (keep image first)
+    const kids = Array.from(sheet.children).slice(1);
+    for (const k of kids) k.remove();
 
-    // meta
-    trackSurface.value = tpl.meta?.trackSurface || trackSurface.value;
-    trackTraction.value = tpl.meta?.trackTraction || trackTraction.value;
+    const box = sheet.getBoundingClientRect();
+    const W = box.width;
+    const H = box.height;
 
-    // fields
-    for (const el of fieldEls()){
-      const path = el.getAttribute('data-field');
-      const v = getByPath(tpl.fields || {}, path);
-      if (v !== '' && v !== undefined) el.value = v;
+    for (const f of FIELDS){
+      if (f.type === 'check'){
+        const el = document.createElement('input');
+        el.type = 'checkbox';
+        el.className = 'chk';
+        const left = (f.x/100)*W;
+        const top  = (f.y/170)*H; // sheet y normalization: the png is tall; we treat y in "pseudo-%"
+        el.style.left = left + 'px';
+        el.style.top  = top + 'px';
+
+        el.checked = !!(current?.data?.[f.id]);
+        el.onchange = () => {
+          if (!current) return;
+          current.data[f.id] = el.checked;
+          current.meta.updatedAt = nowISO();
+          refreshStatus();
+        };
+        sheet.appendChild(el);
+      } else {
+        const el = document.createElement(f.type === 'textarea' ? 'textarea' : 'input');
+        el.className = 'fld' + ((f.h && f.h < 2.1) ? ' small' : '');
+        if (f.type !== 'textarea') el.type = 'text';
+
+        const left = (f.x/100)*W;
+        const top  = (f.y/170)*H;
+        const ww   = (f.w/100)*W;
+        const hh   = (f.h/170)*H;
+
+        el.style.left = left + 'px';
+        el.style.top  = top + 'px';
+        el.style.width = ww + 'px';
+        el.style.height = Math.max(18, hh) + 'px';
+
+        el.value = String(current?.data?.[f.id] ?? '');
+        el.oninput = () => {
+          if (!current) return;
+          current.data[f.id] = el.value;
+          current.meta.updatedAt = nowISO();
+          refreshStatus();
+        };
+        sheet.appendChild(el);
+      }
     }
-
-    // comments
-    if (tpl.comments) commentsEl.value = tpl.comments;
-
-    // date default
-    if (!dateEl.value) dateEl.value = today();
   }
 
-  function openFromBaseline(kind){
-    editorTitle.textContent = 'Ny setup (från baseline)';
-    editorMeta.textContent = 'Du kan ändra och spara som din egen setup.';
-    btnDelete.style.display = 'none';
-    clearEditor();
-    applyTemplate(kind);
-    showEditor(true);
-    // scroll into view on mobile
-    editorCard.scrollIntoView({ behavior:'smooth', block:'start' });
+  // The Y-axis: this sheet is very tall; we normalize y against 170 "units" to keep numbers manageable.
+  // If you replace sheet.png with a different crop, we only need to adjust that 170 constant.
+  // (Keeping it internal to avoid manual edits all over.)
+
+  function refreshStatus(){
+    if (!current){
+      statusPill.textContent = 'Ingen setup vald';
+      btnDelete.style.display = 'none';
+      return;
+    }
+    const t = current.data.track || current.data.trackName || current.data.track || current.data.trackName;
+    const name = (current.data.track || current.data.trackName || current.data.track || '').trim();
+    statusPill.textContent = name ? ('Vald: ' + name) : 'Vald setup (osparad titel)';
+    btnDelete.style.display = '';
   }
 
-  function matchFilters(setup){
+  function listLabel(s){
+    const track = (s.data.track || '').trim() || '(ingen track)';
+    const date = (s.data.date || '').trim();
+    const surf = s.data.track_surface_carpet ? 'Carpet' : (s.data.track_surface_asphalt ? 'Asphalt' : '');
+    const tr = s.data.traction_high ? 'High' : (s.data.traction_medium ? 'Medium' : (s.data.traction_low ? 'Low' : ''));
+    const meta = [date, surf, tr].filter(Boolean).join(' · ');
+    return { track, meta };
+  }
+
+  function matchFilters(s){
     const term = norm(q.value);
     const sf = norm(fSurface.value);
     const tf = norm(fTraction.value);
 
-    const m = setup.meta || {};
-    const surface = norm(m.trackSurface);
-    const traction = norm(m.trackTraction);
+    // derive surface/traction strings
+    const surface = s.data.track_surface_carpet ? 'carpet' : (s.data.track_surface_asphalt ? 'asphalt' : '');
+    const traction = s.data.traction_high ? 'high' : (s.data.traction_medium ? 'medium' : (s.data.traction_low ? 'low' : ''));
 
     if (sf && !surface.includes(sf)) return false;
     if (tf && !traction.includes(tf)) return false;
 
     if (!term) return true;
 
-    const keyHay = [
-      m.trackName, m.trackSurface, m.trackTraction, m.temp, m.bestLap, m.result, m.comments,
-      JSON.stringify(setup.fields || {})
-    ].map(norm).join(' | ');
-
-    return keyHay.includes(term);
-  }
-
-  function fmtDate(d){
-    if (!d) return '-';
-    try{
-      const dt = new Date(d);
-      if (Number.isNaN(dt.getTime())) return d;
-      return dt.toLocaleDateString('sv-SE');
-    }catch{ return d; }
+    const hay = norm(JSON.stringify(s.data));
+    return hay.includes(term);
   }
 
   function renderBaselines(){
     baselineList.innerHTML = '';
-
-    const baselines = [
-      { kind:'carpet', title:'XRAY Basic ETS Carpet', pdf:PDFS.carpet, meta:'Carpet · High', },
-      { kind:'asphalt', title:'XRAY Basic ETS Asphalt', pdf:PDFS.asphalt, meta:'Asphalt · Medium', },
-    ];
-
-    for (const b of baselines){
+    for (const b of BASELINES){
       const el = document.createElement('div');
       el.className = 'item';
 
@@ -641,128 +657,128 @@
       const actions = document.createElement('div');
       actions.className = 'actions';
 
-      const btnCopy = document.createElement('button');
-      btnCopy.className = 'btn';
-      btnCopy.textContent = 'Kopiera som ny';
-      btnCopy.onclick = () => openFromBaseline(b.kind);
+      const copy = document.createElement('button');
+      copy.className = 'btn';
+      copy.textContent = 'Kopiera som ny';
+      copy.onclick = () => {
+        current = newBlankSetup();
+        applyPreset(current, b.preset);
+        all.unshift(current);
+        renderMyList();
+        renderSheet();
+        refreshStatus();
+      };
 
-      const btnPdf = document.createElement('button');
-      btnPdf.className = 'btn ghost';
-      btnPdf.textContent = 'Öppna PDF';
-      btnPdf.onclick = () => window.open(b.pdf, '_blank');
+      const pdf = document.createElement('button');
+      pdf.className = 'btn ghost';
+      pdf.textContent = 'Öppna PDF';
+      pdf.onclick = () => window.open(b.pdf, '_blank');
 
-      actions.append(btnCopy, btnPdf);
+      actions.append(copy, pdf);
       el.append(left, actions);
       baselineList.appendChild(el);
     }
   }
 
   function renderMyList(){
-    all = loadAll()
-      .sort((a,b) => (b.meta?.updatedAt || '').localeCompare(a.meta?.updatedAt || ''));
-
+    all = loadAll().sort((a,b)=> (b.meta?.updatedAt||'').localeCompare(a.meta?.updatedAt||''));
     const filtered = all.filter(matchFilters);
 
     myList.innerHTML = '';
     emptyHint.style.display = filtered.length ? 'none' : 'block';
 
     for (const s of filtered){
+      const {track, meta} = listLabel(s);
+
       const el = document.createElement('div');
       el.className = 'item';
 
-      const m = s.meta || {};
-      const title = document.createElement('div');
-      const t = m.trackName || '(ingen bana)';
-      const d = fmtDate(m.date || m.createdAt);
-      const surf = m.trackSurface ? ` · ${m.trackSurface}` : '';
-      const tr = m.trackTraction ? ` · ${m.trackTraction}` : '';
-      title.innerHTML = `<strong>${escapeHtml(t)}</strong><small>${escapeHtml(d + surf + tr)}</small>`;
+      const left = document.createElement('div');
+      left.innerHTML = `<strong>${escapeHtml(track)}</strong><small>${escapeHtml(meta)}</small>`;
 
       const actions = document.createElement('div');
       actions.className = 'actions';
 
-      const bOpen = document.createElement('button');
-      bOpen.className = 'btn';
-      bOpen.textContent = 'Öppna';
-      bOpen.onclick = () => {
-        editingId = s.id;
-        editorTitle.textContent = 'Redigera setup';
-        editorMeta.textContent = 'Sparas lokalt.';
-        btnDelete.style.display = '';
-        fillEditor(s);
-        showEditor(true);
-        editorCard.scrollIntoView({ behavior:'smooth', block:'start' });
+      const open = document.createElement('button');
+      open.className = 'btn';
+      open.textContent = 'Öppna';
+      open.onclick = () => {
+        current = s;
+        renderSheet();
+        refreshStatus();
       };
 
-      const bCopy = document.createElement('button');
-      bCopy.className = 'btn ghost';
-      bCopy.textContent = 'Kopiera';
-      bCopy.onclick = () => {
-        // copy as new
-        editingId = null;
-        editorTitle.textContent = 'Ny setup (kopierad)';
-        editorMeta.textContent = 'Du kopierar och sparar som ny.';
-        btnDelete.style.display = 'none';
-        fillEditor(s);
-        dateEl.value = today();
-        showEditor(true);
-        editorCard.scrollIntoView({ behavior:'smooth', block:'start' });
+      const dup = document.createElement('button');
+      dup.className = 'btn ghost';
+      dup.textContent = 'Kopiera';
+      dup.onclick = () => {
+        const copy = JSON.parse(JSON.stringify(s));
+        copy.id = uid();
+        copy.meta = { ...copy.meta, createdAt: nowISO(), updatedAt: nowISO() };
+        all.unshift(copy);
+        saveAll(all);
+        renderMyList();
       };
 
-      actions.append(bOpen, bCopy);
-      el.append(title, actions);
+      actions.append(open, dup);
+      el.append(left, actions);
       myList.appendChild(el);
     }
   }
 
-  function render(){
-    renderBaselines();
+  function hardSave(){
+    if (!current){
+      current = newBlankSetup();
+      all.unshift(current);
+    }
+    // upsert
+    const arr = loadAll();
+    const idx = arr.findIndex(x => x.id === current.id);
+    if (idx >= 0) arr[idx] = current;
+    else arr.unshift(current);
+    saveAll(arr);
     renderMyList();
+    alert('Sparad.');
   }
 
-  // Buttons
-  btnHome.onclick = () => { showEditor(false); editingId = null; };
+  function hardDelete(){
+    if (!current) return;
+    const arr = loadAll().filter(x => x.id !== current.id);
+    saveAll(arr);
+    current = null;
+    renderMyList();
+    renderSheet();
+    refreshStatus();
+  }
+
+  // --- Events ---
   btnNew.onclick = () => {
-    editingId = null;
-    editorTitle.textContent = 'Ny setup';
-    editorMeta.textContent = 'Sparas lokalt.';
-    btnDelete.style.display = 'none';
-    clearEditor();
-    showEditor(true);
-    editorCard.scrollIntoView({ behavior:'smooth', block:'start' });
+    current = newBlankSetup();
+    all.unshift(current);
+    renderMyList();
+    renderSheet();
+    refreshStatus();
   };
 
-  btnCloseEditor.onclick = () => { showEditor(false); editingId = null; };
+  btnSave.onclick = hardSave;
+  btnDelete.onclick = hardDelete;
 
-  btnSave.onclick = () => {
-    const s = readEditor();
-    const arr = loadAll();
-    const idx = arr.findIndex(x => x.id === s.id);
-    if (idx >= 0) arr[idx] = s;
-    else arr.push(s);
-    saveAll(arr);
-    editingId = s.id;
-    btnDelete.style.display = '';
-    render();
-    alert('Sparad.');
-  };
-
-  btnDelete.onclick = () => {
-    if (!editingId) return;
-    const arr = loadAll().filter(x => x.id !== editingId);
-    saveAll(arr);
-    editingId = null;
-    showEditor(false);
-    render();
-  };
-
-  // Search/filter
   q.addEventListener('input', renderMyList);
   fSurface.addEventListener('input', renderMyList);
   fTraction.addEventListener('input', renderMyList);
 
-  // Start
-  render();
+  // --- Init ---
+  renderBaselines();
+  renderMyList();
+
+  // start with blank setup selected
+  current = newBlankSetup();
+  renderSheet();
+  refreshStatus();
+
+  // re-render fields on resize (positions)
+  window.addEventListener('resize', () => { if (current) renderSheet(); });
+
 })();
 </script>
 </body>
