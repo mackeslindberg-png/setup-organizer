@@ -444,8 +444,12 @@
           el.value = w.exportValue || "On";
           el.dataset.fname = w.fieldName;
 
-          el.style.left = (cx - box/2) + "px";
-          el.style.top  = (cy - box/2) + "px";
+         const OX = 2;   // finjustering höger
+const OY = 2;   // finjustering ner
+
+el.style.left = (cx - box/2 + OX) + "px";
+el.style.top  = (cy - box/2 + OY) + "px";
+
           el.style.width = box + "px";
           el.style.height = box + "px";
 
@@ -464,8 +468,12 @@
           el.className = 'chk';
           el.dataset.fname = w.fieldName;
 
-          el.style.left = (cx - box/2) + "px";
-          el.style.top  = (cy - box/2) + "px";
+         const OX = 2;   // finjustering höger
+const OY = 2;   // finjustering ner
+
+el.style.left = (cx - box/2 + OX) + "px";
+el.style.top  = (cy - box/2 + OY) + "px";
+
           el.style.width = box + "px";
           el.style.height = box + "px";
 
