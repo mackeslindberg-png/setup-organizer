@@ -434,35 +434,30 @@
     clearOverlay();
 
     for (const w of widgets){
-      const { left, top, width, height } = pdfRectToCss(w.rect);
-const minW = 14, minH = 14;
-const W = Math.max(width, minW);
-const H = Math.max(height, minH);
-...
-el.style.left = left + "px";
-el.style.top = top + "px";
-el.style.width = W + "px";
-el.style.height = H + "px";
+     const { left, top, width, height } = pdfRectToCss(w.rect);
 
+// behåll originalmåttet för centrering
+const Wraw = width;
+const Hraw = height;
 
-          el.addEventListener('change', () => {
-            if (!current) return;
-            current.fields[w.fieldName] = el.value;
-            current.meta.updatedAt = nowISO();
-            refreshStatus();
-          });
+// klickyta minst 14x14, men själva rutan mindre och centrerad
+const hitW = Math.max(Wraw, 14);
+const hitH = Math.max(Hraw, 14);
 
-          stage.appendChild(el);
-          overlayNodes.push(el);
-        } else {
-          const el = document.createElement('input');
-          el.type = 'checkbox';
-          el.className = 'chk';
-          el.dataset.fname = w.fieldName;
-          el.style.left = left + "px";
-          el.style.top = top + "px";
-          el.style.width = W + "px";
-          el.style.height = H + "px";
+// själva checkbox-storleken: lite mindre än rutan men inte större än 14
+const box = Math.max(10, Math.min(14, Math.min(Wraw, Hraw)));
+
+const el = document.createElement('input');
+el.type = 'checkbox';
+el.className = 'chk';
+el.dataset.fname = w.fieldName;
+
+// klickyta (osynlig) styrs av width/height, men själva checkboxen styr vi genom scale
+el.style.left = (left + (hitW - box) / 2) + "px";
+el.style.top  = (top  + (hitH - box) / 2) + "px";
+el.style.width  = box + "px";
+el.style.height = box + "px";
+
 
           el.addEventListener('change', () => {
             if (!current) return;
