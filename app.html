@@ -69,6 +69,7 @@
       -webkit-overflow-scrolling:touch;
       border-radius:12px;
       background:#0b0c10;
+      min-height:520px;
     }
     .stage{
       position:relative;
@@ -97,9 +98,20 @@
       background:rgba(12,13,16,.65);
       border-radius:4px;
     }
+
+    .err{
+      padding:12px;
+      border:1px solid rgba(251,113,133,.5);
+      background:rgba(136,19,55,.15);
+      border-radius:14px;
+      margin-top:10px;
+      color:#ffd1d9;
+      font-size:13px;
+      white-space:pre-wrap;
+    }
   </style>
 
-  <!-- pdf.js (render + formfält) -->
+  <!-- pdf.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
 </head>
 <body>
@@ -154,13 +166,14 @@
       <div class="stageScroller">
         <div class="stage" id="stage">
           <canvas id="pdfCanvas"></canvas>
-          <!-- formfält overlay skapas av JS -->
         </div>
       </div>
 
       <div class="meta" style="margin-top:10px">
         Om du vill skriva i små rutor: zooma in med webbläsarens pinch-zoom.
       </div>
+
+      <div id="errBox" class="err" style="display:none"></div>
     </section>
 
   </div>
@@ -173,12 +186,10 @@
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
 
-  // pdf.js worker
-  // (CDN: pdf.min.js kan hitta worker via samma version-länk)
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
+  // pdf.js: kör utan worker för max kompatibilitet (löser många "tom sida"-problem)
+  // OBS: vi använder disableWorker i getDocument istället för workerSrc.
+  // pdfjsLib.GlobalWorkerOptions.workerSrc = ... (behövs ej)
 
-  // Storage
   const KEY = 'setup_organizer_pdf_fields_v1';
   const uid = () => Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
   const nowISO = () => new Date().toISOString();
@@ -197,13 +208,11 @@
     localStorage.setItem(KEY, JSON.stringify(arr));
   }
 
-  // XRAY PDFs for baselines
   const PDFS = {
     carpet: "https://teamxray.com/downloads/95/x4f_2024_set_up_basic_for_ets_carpet.pdf",
     asphalt: "https://teamxray.com/downloads/20/x4f_2024_set_up_basic_for_ets_asphalt.pdf"
   };
 
-  // UI
   const baselineList = document.getElementById('baselineList');
   const myList = document.getElementById('myList');
   const emptyHint = document.getElementById('emptyHint');
@@ -216,64 +225,38 @@
   const btnDelete = document.getElementById('btnDelete');
 
   const statusPill = document.getElementById('statusPill');
+  const errBox = document.getElementById('errBox');
+
   const stage = document.getElementById('stage');
   const canvas = document.getElementById('pdfCanvas');
   const ctx = canvas.getContext('2d', { alpha:false });
 
-  // State
   let all = loadAll().sort((a,b)=> (b.meta?.updatedAt||'').localeCompare(a.meta?.updatedAt||''));
   let current = null;
 
   let pdfDoc = null;
   let page = null;
   let viewport = null;
-  let widgetAnnots = []; // all widgets for page
-  let overlayNodes = [];
+  let widgetAnnots = [];
 
-  function newBlankSetup(){
-    return {
-      id: uid(),
-      meta: { updatedAt: nowISO(), createdAt: nowISO() },
-      fields: {} // fieldName -> value OR for radios: fieldName -> selected exportValue
-    };
+  function showError(msg){
+    errBox.style.display = '';
+    errBox.textContent = msg;
   }
 
-  function refreshStatus(){
-    if (!pdfDoc){
-      statusPill.textContent = 'Laddar sheet.pdf…';
-      return;
-    }
-    if (!current){
-      statusPill.textContent = 'Ingen setup vald';
-      btnDelete.style.display = 'none';
-      return;
-    }
-    // Best effort: find common field names that might exist
-    const name =
-      current.fields["Name"] ||
-      current.fields["NAME"] ||
-      current.fields["name"] ||
-      current.fields["Track"] ||
-      current.fields["TRACK"] ||
-      current.fields["track"] ||
-      '';
-    statusPill.textContent = name ? ('Vald: ' + name) : 'Vald setup';
-    btnDelete.style.display = '';
+  function newBlankSetup(){
+    return { id: uid(), meta: { updatedAt: nowISO(), createdAt: nowISO() }, fields: {} };
   }
 
   function deriveSurfaceTraction(setup){
     const f = setup.fields || {};
-    const surface = (
+    const surface =
       (f["CARPET"] || f["Carpet"] || f["carpet"]) ? "carpet" :
-      (f["ASPHALT"] || f["Asphalt"] || f["asphalt"]) ? "asphalt" : ""
-    );
-
-    const traction = (
+      (f["ASPHALT"] || f["Asphalt"] || f["asphalt"]) ? "asphalt" : "";
+    const traction =
       (f["HIGH"] || f["High"] || f["high"]) ? "high" :
       (f["MEDIUM"] || f["Medium"] || f["medium"]) ? "medium" :
-      (f["LOW"] || f["Low"] || f["low"]) ? "low" : ""
-    );
-
+      (f["LOW"] || f["Low"] || f["low"]) ? "low" : "";
     return { surface, traction };
   }
 
@@ -281,25 +264,35 @@
     const term = norm(q.value);
     const sf = norm(fSurface.value);
     const tf = norm(fTraction.value);
-
     const {surface, traction} = deriveSurfaceTraction(setup);
-
     if (sf && !surface.includes(sf)) return false;
     if (tf && !traction.includes(tf)) return false;
-
     if (!term) return true;
     return norm(JSON.stringify(setup.fields || {})).includes(term);
   }
 
   function listLabel(setup){
     const f = setup.fields || {};
-    // pick some likely header fields, fallback
     const track = (f["TRACK"] || f["Track"] || f["track"] || f["RACE"] || f["Race"] || f["race"] || "(ingen titel)");
     const date  = (f["DATE"] || f["Date"] || f["date"] || "");
     const {surface, traction} = deriveSurfaceTraction(setup);
-
     const meta = [date, surface, traction].filter(Boolean).join(' · ');
     return { track: String(track), meta };
+  }
+
+  function refreshStatus(){
+    if (!pdfDoc){
+      statusPill.textContent = 'Laddar sheet.pdf…';
+      btnDelete.style.display = 'none';
+      return;
+    }
+    if (!current){
+      statusPill.textContent = 'Ingen setup vald';
+      btnDelete.style.display = 'none';
+      return;
+    }
+    statusPill.textContent = `Vald setup · fält: ${Object.keys(current.fields||{}).length}`;
+    btnDelete.style.display = '';
   }
 
   function renderBaselines(){
@@ -324,16 +317,9 @@
       copy.textContent = 'Kopiera som ny';
       copy.onclick = () => {
         current = newBlankSetup();
-        // Baseline: vi sätter bara “surface/traction” om vi kan mappa dem via fältnamn.
-        // Resten får du fylla, exakt som på papper.
-        // (När vi ser fieldNames kan vi sätta fler baselinevärden exakt.)
-        if (b.kind === 'carpet'){
-          current.fields["CARPET"] = true;
-          current.fields["HIGH"] = true;
-        } else {
-          current.fields["ASPHALT"] = true;
-          current.fields["MEDIUM"] = true;
-        }
+        if (b.kind === 'carpet'){ current.fields["CARPET"] = true; current.fields["HIGH"] = true; }
+        else { current.fields["ASPHALT"] = true; current.fields["MEDIUM"] = true; }
+
         all.unshift(current);
         saveAll(all);
         renderMyList();
@@ -374,11 +360,7 @@
       const open = document.createElement('button');
       open.className = 'btn';
       open.textContent = 'Öppna';
-      open.onclick = () => {
-        current = s;
-        populateOverlayFromCurrent();
-        refreshStatus();
-      };
+      open.onclick = () => { current = s; populateOverlayFromCurrent(); refreshStatus(); };
 
       const dup = document.createElement('button');
       dup.className = 'btn ghost';
@@ -424,30 +406,8 @@
     refreshStatus();
   }
 
-  // --- PDF rendering + widgets ---
-  async function loadPdfAndBuildOverlay(){
-    pdfDoc = await pdfjsLib.getDocument("./sheet.pdf").promise;
-    page = await pdfDoc.getPage(1);
-
-    // scale for readability; user can pinch-zoom anyway
-    const scale = 1.6;
-    viewport = page.getViewport({ scale });
-
-    canvas.width = Math.ceil(viewport.width);
-    canvas.height = Math.ceil(viewport.height);
-
-    stage.style.width = canvas.width + "px";
-    stage.style.height = canvas.height + "px";
-
-    await page.render({ canvasContext: ctx, viewport }).promise;
-
-    // Get all annotations (widgets are form fields)
-    const annots = await page.getAnnotations({ intent: "display" });
-    widgetAnnots = annots.filter(a => a.subtype === "Widget" && a.fieldName);
-
-    buildOverlayNodes(widgetAnnots);
-    statusPill.textContent = `Laddad: ${widgetAnnots.length} fält`;
-  }
+  // Overlay
+  let overlayNodes = [];
 
   function clearOverlay(){
     for (const n of overlayNodes) n.remove();
@@ -455,8 +415,6 @@
   }
 
   function pdfRectToCss(rect){
-    // rect in PDF user space -> viewport space
-    // returns [x1,y1,x2,y2] in viewport coords
     const r = pdfjsLib.Util.normalizeRect(rect);
     const v = viewport.convertToViewportRectangle(r);
     const [x1,y1,x2,y2] = v;
@@ -470,17 +428,12 @@
   function buildOverlayNodes(widgets){
     clearOverlay();
 
-    // Build per-widget
     for (const w of widgets){
       const { left, top, width, height } = pdfRectToCss(w.rect);
-
-      // Some PDF fields are tiny. Make them still clickable.
       const minW = 14, minH = 14;
       const W = Math.max(width, minW);
       const H = Math.max(height, minH);
 
-      // Field types:
-      // Tx (text), Btn (checkbox/radio), Ch (choice), Sig (signature)
       const t = w.fieldType;
 
       if (t === "Btn"){
@@ -490,7 +443,6 @@
           el.className = 'rad';
           el.name = w.fieldName;
           el.value = w.exportValue || "On";
-
           el.style.left = left + "px";
           el.style.top = top + "px";
           el.style.width = W + "px";
@@ -509,6 +461,7 @@
           const el = document.createElement('input');
           el.type = 'checkbox';
           el.className = 'chk';
+          el.dataset.fname = w.fieldName;
           el.style.left = left + "px";
           el.style.top = top + "px";
           el.style.width = W + "px";
@@ -524,32 +477,12 @@
           stage.appendChild(el);
           overlayNodes.push(el);
         }
-      } else if (t === "Tx"){
-        // Multiline if flag 4096 set OR w.multiLine
+      } else {
         const isMulti = !!w.multiLine || ((w.fieldFlags || 0) & 4096) === 4096;
         const el = document.createElement(isMulti ? 'textarea' : 'input');
         if (!isMulti) el.type = 'text';
         el.className = 'fld' + (H < 20 ? ' small' : '');
-
-        el.style.left = left + "px";
-        el.style.top = top + "px";
-        el.style.width = W + "px";
-        el.style.height = Math.max(18, H) + "px";
-
-        el.addEventListener('input', () => {
-          if (!current) return;
-          current.fields[w.fieldName] = el.value;
-          current.meta.updatedAt = nowISO();
-          refreshStatus();
-        });
-
-        stage.appendChild(el);
-        overlayNodes.push(el);
-      } else {
-        // Other field types: create a small text box
-        const el = document.createElement('input');
-        el.type = 'text';
-        el.className = 'fld small';
+        el.dataset.fname = w.fieldName;
 
         el.style.left = left + "px";
         el.style.top = top + "px";
@@ -568,53 +501,50 @@
       }
     }
 
-    // After creating, populate with current values (if any)
     populateOverlayFromCurrent();
   }
 
   function populateOverlayFromCurrent(){
-    // If no setup selected, clear values to empty/false
     const f = current?.fields || {};
-
-    // Map widgets -> nodes in same iteration order:
-    // overlayNodes includes different element types, but we can re-walk widgetAnnots and find matching node by DOM position:
-    // easiest: just query all inputs/textareas and set based on name/fieldName.
     const nodes = stage.querySelectorAll('input, textarea');
 
     for (const el of nodes){
+      const fieldName = el.dataset.fname || el.name || '';
+      if (!fieldName) continue;
+
       if (el.type === 'radio'){
-        const fieldName = el.name;
         const wanted = f[fieldName];
         el.checked = wanted ? (String(wanted) === String(el.value)) : false;
       } else if (el.type === 'checkbox'){
-        // checkbox: we stored boolean on fieldName, but some PDFs reuse same fieldName
-        // If reused, user will still toggle them correctly per fieldName.
-        const fieldName = findNearestFieldNameForElement(el);
         el.checked = !!f[fieldName];
       } else {
-        const fieldName = findNearestFieldNameForElement(el);
         el.value = String(f[fieldName] ?? '');
       }
     }
+  }
 
-    // helper: for check/text we infer fieldName by hit-testing against widget rects
-    function findNearestFieldNameForElement(el){
-      // we stored in DOM as positioned element, so match by rect overlap with widget rects
-      const r = el.getBoundingClientRect();
-      const sr = stage.getBoundingClientRect();
-      const x = (r.left - sr.left) + r.width/2;
-      const y = (r.top - sr.top) + r.height/2;
+  async function loadPdfAndBuildOverlay(){
+    // disableWorker löser ofta "tom render" när worker från CDN blockas
+    const loadingTask = pdfjsLib.getDocument({ url: "./sheet.pdf", disableWorker: true });
+    pdfDoc = await loadingTask.promise;
+    page = await pdfDoc.getPage(1);
 
-      // find widget whose viewport rect contains point
-      for (const w of widgetAnnots){
-        const css = pdfRectToCss(w.rect);
-        if (x >= css.left && x <= css.left + css.width && y >= css.top && y <= css.top + css.height){
-          return w.fieldName;
-        }
-      }
-      // fallback
-      return el.name || el.id || '';
-    }
+    const scale = 1.6;
+    viewport = page.getViewport({ scale });
+
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+
+    stage.style.width = canvas.width + "px";
+    stage.style.height = canvas.height + "px";
+
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    const annots = await page.getAnnotations({ intent: "display" });
+    widgetAnnots = annots.filter(a => a.subtype === "Widget" && a.fieldName);
+
+    buildOverlayNodes(widgetAnnots);
+    statusPill.textContent = `Laddad: ${widgetAnnots.length} fält`;
   }
 
   // Events
@@ -641,16 +571,19 @@
   saveAll(all);
   refreshStatus();
 
-  loadPdfAndBuildOverlay()
-    .then(() => {
-      refreshStatus();
-      populateOverlayFromCurrent();
-    })
-    .catch((e) => {
-      statusPill.textContent = "Kunde inte läsa sheet.pdf";
-      console.error(e);
-      alert("Kunde inte läsa sheet.pdf. Testa att ladda om.");
-    });
+  loadPdfAndBuildOverlay().then(() => {
+    refreshStatus();
+    populateOverlayFromCurrent();
+  }).catch((e) => {
+    const msg =
+      "PDF-laddning misslyckades.\n\n" +
+      "1) Kontrollera att sheet.pdf ligger i repots root.\n" +
+      "2) Testa bumpa cache (sw.js).\n\n" +
+      "Teknisk info:\n" + (e && (e.message || String(e)));
+    showError(msg);
+    statusPill.textContent = "Kunde inte läsa sheet.pdf";
+    console.error(e);
+  });
 
 })();
 </script>
