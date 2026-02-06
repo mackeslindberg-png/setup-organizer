@@ -42,7 +42,7 @@
     .meta{font-size:12px;color:var(--muted)}
     .hr{height:1px;background:var(--line);margin:10px 0}
     .two{display:grid;grid-template-columns: 380px 1fr;gap:12px}
-    @media (max-width: 980px){ .two{grid-template-columns:1fr;}}
+    @media (max-width: 980px){ .two{grid-template-columns:1fr;} }
     input, textarea{
       width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);
       background:#0c0d10;color:var(--text);outline:none;font-size:14px;
@@ -76,7 +76,7 @@
       display:inline-block;
       transform-origin: top left;
     }
-    canvas{display:block; border-radius:10px}
+    canvas{display:block;border-radius:10px}
 
     /* Overlay fields */
     .fld, .chk, .rad{
@@ -92,15 +92,12 @@
       border-radius:6px;
     }
     .fld.small{font-size:11px;padding:1px 3px}
-   .chk, .rad{
-  width:16px;height:16px;
-  accent-color: var(--accent);
-  background:rgba(12,13,16,.65);
-  border-radius:4px;
-}
-
-}
-
+    .chk, .rad{
+      width:16px;
+      height:16px;
+      accent-color: var(--accent);
+      background:rgba(12,13,16,.65);
+      border-radius:4px;
     }
 
     .err{
@@ -115,10 +112,10 @@
     }
   </style>
 
-  <!-- pdf.js -->
- <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.min.js"></script>
-
+  <!-- pdf.js (stabil version på cdnjs) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.min.js"></script>
 </head>
+
 <body>
 <header>
   <div class="wrap">
@@ -186,21 +183,18 @@
 
 <script>
 (() => {
-  // SW
+  // Service worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
 
-  // pdf.js: kör utan worker för max kompatibilitet (löser många "tom sida"-problem)
-  // OBS: vi använder disableWorker i getDocument istället för workerSrc.
-  // pdfjsLib.GlobalWorkerOptions.workerSrc = ... (behövs ej)
-
-  const KEY = 'setup_organizer_pdf_fields_v1';
+  const KEY = 'setup_organizer_pdf_fields_v2';
   const uid = () => Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
   const nowISO = () => new Date().toISOString();
   const norm = (s) => String(s ?? '').trim().toLowerCase();
   const escapeHtml = (s) =>
-    String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;");
+    String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+      .replaceAll('"','&quot;').replaceAll("'","&#039;");
 
   function loadAll(){
     try{
@@ -243,6 +237,7 @@
   let page = null;
   let viewport = null;
   let widgetAnnots = [];
+  let overlayNodes = [];
 
   function showError(msg){
     errBox.style.display = '';
@@ -411,9 +406,6 @@
     refreshStatus();
   }
 
-  // Overlay
-  let overlayNodes = [];
-
   function clearOverlay(){
     for (const n of overlayNodes) n.remove();
     overlayNodes = [];
@@ -422,7 +414,7 @@
   function pdfRectToCss(rect){
     const r = pdfjsLib.Util.normalizeRect(rect);
     const v = viewport.convertToViewportRectangle(r);
-    const [x1,y1,x2,y2] = v;
+    const x1 = v[0], y1 = v[1], x2 = v[2], y2 = v[3];
     const left = Math.min(x1,x2);
     const top = Math.min(y1,y2);
     const width = Math.abs(x2-x1);
@@ -434,30 +426,48 @@
     clearOverlay();
 
     for (const w of widgets){
-     const { left, top, width, height } = pdfRectToCss(w.rect);
+      const { left, top, width, height } = pdfRectToCss(w.rect);
+      const t = w.fieldType;
 
-// behåll originalmåttet för centrering
-const Wraw = width;
-const Hraw = height;
+      const cx = left + width / 2;
+      const cy = top + height / 2;
 
-// klickyta minst 14x14, men själva rutan mindre och centrerad
-const hitW = Math.max(Wraw, 14);
-const hitH = Math.max(Hraw, 14);
+      if (t === "Btn"){
+        // PDF checkbox/radio: centrera alltid i den rutan
+        const box = Math.max(12, Math.min(16, (Math.min(width, height) || 16)));
 
-// själva checkbox-storleken: lite mindre än rutan men inte större än 14
-const box = Math.max(10, Math.min(14, Math.min(Wraw, Hraw)));
+        if (w.radioButton){
+          const el = document.createElement('input');
+          el.type = 'radio';
+          el.className = 'rad';
+          el.name = w.fieldName;
+          el.value = w.exportValue || "On";
+          el.dataset.fname = w.fieldName;
 
-const el = document.createElement('input');
-el.type = 'checkbox';
-el.className = 'chk';
-el.dataset.fname = w.fieldName;
+          el.style.left = (cx - box/2) + "px";
+          el.style.top  = (cy - box/2) + "px";
+          el.style.width = box + "px";
+          el.style.height = box + "px";
 
-// klickyta (osynlig) styrs av width/height, men själva checkboxen styr vi genom scale
-el.style.left = (left + (hitW - box) / 2) + "px";
-el.style.top  = (top  + (hitH - box) / 2) + "px";
-el.style.width  = box + "px";
-el.style.height = box + "px";
+          el.addEventListener('change', () => {
+            if (!current) return;
+            current.fields[w.fieldName] = el.value;
+            current.meta.updatedAt = nowISO();
+            refreshStatus();
+          });
 
+          stage.appendChild(el);
+          overlayNodes.push(el);
+        } else {
+          const el = document.createElement('input');
+          el.type = 'checkbox';
+          el.className = 'chk';
+          el.dataset.fname = w.fieldName;
+
+          el.style.left = (cx - box/2) + "px";
+          el.style.top  = (cy - box/2) + "px";
+          el.style.width = box + "px";
+          el.style.height = box + "px";
 
           el.addEventListener('change', () => {
             if (!current) return;
@@ -469,17 +479,41 @@ el.style.height = box + "px";
           stage.appendChild(el);
           overlayNodes.push(el);
         }
-      } else {
+
+      } else if (t === "Tx") {
         const isMulti = !!w.multiLine || ((w.fieldFlags || 0) & 4096) === 4096;
         const el = document.createElement(isMulti ? 'textarea' : 'input');
         if (!isMulti) el.type = 'text';
-        el.className = 'fld' + (H < 20 ? ' small' : '');
+
+        el.className = 'fld' + (height < 20 ? ' small' : '');
         el.dataset.fname = w.fieldName;
 
         el.style.left = left + "px";
         el.style.top = top + "px";
-        el.style.width = W + "px";
-        el.style.height = Math.max(18, H) + "px";
+        el.style.width = Math.max(width, 40) + "px";
+        el.style.height = Math.max(isMulti ? 40 : 18, height) + "px";
+
+        el.addEventListener('input', () => {
+          if (!current) return;
+          current.fields[w.fieldName] = el.value;
+          current.meta.updatedAt = nowISO();
+          refreshStatus();
+        });
+
+        stage.appendChild(el);
+        overlayNodes.push(el);
+
+      } else {
+        // fallback
+        const el = document.createElement('input');
+        el.type = 'text';
+        el.className = 'fld small';
+        el.dataset.fname = w.fieldName;
+
+        el.style.left = left + "px";
+        el.style.top = top + "px";
+        el.style.width = Math.max(width, 40) + "px";
+        el.style.height = Math.max(18, height) + "px";
 
         el.addEventListener('input', () => {
           if (!current) return;
@@ -516,7 +550,7 @@ el.style.height = box + "px";
   }
 
   async function loadPdfAndBuildOverlay(){
-    // disableWorker löser ofta "tom render" när worker från CDN blockas
+    // För kompatibilitet: worker off
     const loadingTask = pdfjsLib.getDocument({ url: "./sheet.pdf", disableWorker: true });
     pdfDoc = await loadingTask.promise;
     page = await pdfDoc.getPage(1);
@@ -558,6 +592,7 @@ el.style.height = box + "px";
   // Init
   renderBaselines();
   renderMyList();
+
   current = newBlankSetup();
   all.unshift(current);
   saveAll(all);
