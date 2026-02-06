@@ -4,71 +4,88 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>setup-organizer</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#111217">
 
   <style>
+    :root{
+      --bg:#0f0f10;
+      --card:#16171a;
+      --muted:#a8abb2;
+      --text:#f2f2f3;
+      --line:#2a2c33;
+      --accent:#4f7cff;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0;
-      font-family: system-ui, sans-serif;
-      background:#0f0f10;
-      color:white;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
       display:flex;
       align-items:center;
       justify-content:center;
-      height:100vh;
       text-align:center;
+      padding:22px;
     }
-    .box{
-      padding:30px;
-    }
-    h1{
-      font-size:32px;
-      margin-bottom:30px;
-      letter-spacing:1px;
-    }
+    .box{max-width:520px; width:100%}
+    h1{font-size:34px; margin:0 0 18px; letter-spacing:.4px}
+    .sub{color:var(--muted); margin:0 0 22px; font-size:14px}
     .icon{
-      width:140px;
-      height:140px;
-      margin:0 auto 30px;
-      border-radius:24px;
+      width:170px; height:170px;
+      margin:0 auto 22px;
+      border-radius:26px;
       background:#1b1c20;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:50px;
+      border:1px solid var(--line);
+      display:flex; align-items:center; justify-content:center;
+      padding:18px;
     }
-    button{
-      font-size:20px;
-      padding:14px 40px;
+    .icon img{width:100%; height:100%; object-fit:contain; border-radius:18px}
+    .btn{
+      width:100%;
+      font-size:18px;
+      padding:14px 16px;
       border-radius:14px;
-      border:none;
-      background:#2d6cff;
+      border:1px solid transparent;
+      background:linear-gradient(180deg, #2f5eff, #2247c9);
       color:white;
-      font-weight:bold;
+      font-weight:800;
+      cursor:pointer;
     }
+    .mini{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+    }
+    a{color:#b8c7ff}
   </style>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>setup-organizer</title>
-  <link rel="manifest" href="manifest.json">
-
+</head>
 <body>
   <div class="box">
     <h1>setup-organizer</h1>
+    <p class="sub">X4F 2024. Offline. Lokalt sparat.</p>
 
-   <div class="icon" style="padding:18px">
-  <img src="./icon.svg" alt="setup-organizer ikon" style="width:100%;height:100%;object-fit:contain;border-radius:18px">
-</div>
+    <div class="icon">
+      <img src="./icon.svg" alt="setup-organizer ikon">
+    </div>
 
+    <button class="btn" id="startBtn">START</button>
 
-    <button id="startBtn">START</button>
-
+    <div class="mini">
+      Tips: Lägg till på hemskärmen för “riktig app-känsla”.
+    </div>
   </div>
-  <script>
-  document.getElementById("startBtn").addEventListener("click", () => {
-    window.location.href = "./app.html";
-  });
-</script>
 
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+    document.getElementById("startBtn").addEventListener("click", () => {
+      window.location.href = "./app.html";
+    });
+  </script>
 </body>
 </html>
