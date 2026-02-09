@@ -429,8 +429,9 @@
       const { left, top, width, height } = pdfRectToCss(w.rect);
       const t = w.fieldType;
 
-      const cx = left + width / 2;
-      const cy = top + height / 2;
+     const OX = -1;  // vänster
+     const OY = 4;   // ner
+
 
       if (t === "Btn"){
         // PDF checkbox/radio: centrera alltid i den rutan
