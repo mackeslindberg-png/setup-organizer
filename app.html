@@ -562,21 +562,19 @@ function buildOverlayNodes(widgets){
     }
   }
 
-  async function loadPdfAndBuildOverlay(){
-    // För kompatibilitet: worker off
-   const pdfUrl = "./sheet.pdf?v=" + Date.now();
-    const timeoutId = setTimeout(() => {
-  statusPill.textContent = "Fastnade vid PDF-laddning";
-  showError("PDF-laddningen fastnade. Det är nästan alltid cache/service worker. Bumpa CACHE_NAME och ladda om.");
-}, 8000);
-const timeoutId = setTimeout(() => {
-  statusPill.textContent = "Fastnade vid PDF-laddning";
-  showError("PDF-laddningen fastnade. Det är nästan alltid cache/service worker. Bumpa CACHE_NAME och ladda om.");
-}, 8000);
+ async function loadPdfAndBuildOverlay(){
+  const pdfUrl = "./sheet.pdf?v=" + Date.now();
 
-const loadingTask = pdfjsLib.getDocument({ url: pdfUrl, disableWorker: true });
+  const timeoutId = setTimeout(() => {
+    statusPill.textContent = "Fastnade vid PDF-laddning";
+    showError("PDF-laddningen fastnade. Det är nästan alltid cache/service worker. Bumpa CACHE_NAME och ladda om.");
+  }, 8000);
+
+  try{
+    const loadingTask = pdfjsLib.getDocument({ url: pdfUrl, disableWorker: true });
     pdfDoc = await loadingTask.promise;
     clearTimeout(timeoutId);
+
     page = await pdfDoc.getPage(1);
 
     const scale = 1.6;
@@ -595,7 +593,13 @@ const loadingTask = pdfjsLib.getDocument({ url: pdfUrl, disableWorker: true });
 
     buildOverlayNodes(widgetAnnots);
     statusPill.textContent = `Laddad: ${widgetAnnots.length} fält`;
+  } catch(e){
+    clearTimeout(timeoutId);
+    showError("PDF-laddning misslyckades:\n" + (e && (e.message || String(e))));
+    statusPill.textContent = "Kunde inte läsa sheet.pdf";
+    console.error(e);
   }
+}
 
   // Events
   btnNew.onclick = () => {
