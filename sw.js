@@ -1,4 +1,4 @@
-const CACHE_NAME = "setup-organizer-v13";
+const CACHE_NAME = "setup-organizer-v14";
 const ASSETS = [
   "./",
   "./index.html",
