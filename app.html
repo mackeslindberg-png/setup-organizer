@@ -412,94 +412,48 @@
   }
 
   function pdfRectToCss(rect){
-    const r = pdfjsLib.Util.normalizeRect(rect);
-    const v = viewport.convertToViewportRectangle(r);
-    const x1 = v[0], y1 = v[1], x2 = v[2], y2 = v[3];
-    const left = Math.min(x1,x2);
-    const top = Math.min(y1,y2);
-    const width = Math.abs(x2-x1);
-    const height = Math.abs(y2-y1);
-    return { left, top, width, height };
-  }
-
-  function buildOverlayNodes(widgets){
-    clearOverlay();
-
-    for (const w of widgets){
-      const { left, top, width, height } = pdfRectToCss(w.rect);
-      const t = w.fieldType;
-
-     const OX = -1;  // vänster
-     const OY = 4;   // ner
-
-
-      if (t === "Btn"){
-        // PDF checkbox/radio: centrera alltid i den rutan
-       const box = Math.max(12, Math.min(16, (Math.min(width, height) || 16)));
-
-// global finjustering
-const OX = -3;   // mer åt höger
-const OY = -3;   // uppåt
-
-if (w.radioButton){
-  const el = document.createElement('input');
-  el.type = 'radio';
-  el.className = 'rad';
-  el.name = w.fieldName;
-  el.value = w.exportValue || "On";
-  el.dataset.fname = w.fieldName;
-
-  el.style.left = (cx - box/2 + OX) + "px";
-  el.style.top  = (cy - box/2 + OY) + "px";
-  el.style.width = box + "px";
-  el.style.height = box + "px";
-
-  el.addEventListener('change', () => {
-    if (!current) return;
-    current.fields[w.fieldName] = el.value;
-    current.meta.updatedAt = nowISO();
-    refreshStatus();
-  });
-
-  stage.appendChild(el);
-  overlayNodes.push(el);
-
-} else {
-  const el = document.createElement('input');
-  el.type = 'checkbox';
-  el.className = 'chk';
-  el.dataset.fname = w.fieldName;
-
-  el.style.left = (cx - box/2 + OX) + "px";
-  el.style.top  = (cy - box/2 + OY) + "px";
-  el.style.width = box + "px";
-  el.style.height = box + "px";
-
-  el.addEventListener('change', () => {
-    if (!current) return;
-    current.fields[w.fieldName] = el.checked;
-    current.meta.updatedAt = nowISO();
-    refreshStatus();
-  });
-
-  stage.appendChild(el);
-  overlayNodes.push(el);
+  const r = pdfjsLib.Util.normalizeRect(rect);
+  const v = viewport.convertToViewportRectangle(r);
+  const x1 = v[0], y1 = v[1], x2 = v[2], y2 = v[3];
+  const left = Math.min(x1, x2);
+  const top = Math.min(y1, y2);
+  const width = Math.abs(x2 - x1);
+  const height = Math.abs(y2 - y1);
+  return { left, top, width, height };
 }
 
-      } else if (t === "Tx") {
-        const isMulti = !!w.multiLine || ((w.fieldFlags || 0) & 4096) === 4096;
-        const el = document.createElement(isMulti ? 'textarea' : 'input');
-        if (!isMulti) el.type = 'text';
+function buildOverlayNodes(widgets){
+  clearOverlay();
 
-        el.className = 'fld' + (height < 20 ? ' small' : '');
+  // Justera här (globalt för alla kryss/radio)
+  const OX = -2;   // vänster
+  const OY = -2;   // upp
+
+  for (const w of widgets){
+    const { left, top, width, height } = pdfRectToCss(w.rect);
+    const t = w.fieldType;
+
+    // centrum av PDF-rutan (viktigt)
+    const cx = left + width / 2;
+    const cy = top + height / 2;
+
+    if (t === "Btn"){
+      const box = Math.max(12, Math.min(16, (Math.min(width, height) || 16)));
+
+      if (w.radioButton){
+        const el = document.createElement('input');
+        el.type = 'radio';
+        el.className = 'rad';
+        el.name = w.fieldName;
+        el.value = w.exportValue || "On";
         el.dataset.fname = w.fieldName;
 
-        el.style.left = left + "px";
-        el.style.top = top + "px";
-        el.style.width = Math.max(width, 40) + "px";
-        el.style.height = Math.max(isMulti ? 40 : 18, height) + "px";
+        el.style.left = (cx - box/2 + OX) + "px";
+        el.style.top  = (cy - box/2 + OY) + "px";
+        el.style.width  = box + "px";
+        el.style.height = box + "px";
 
-        el.addEventListener('input', () => {
+        el.addEventListener('change', () => {
           if (!current) return;
           current.fields[w.fieldName] = el.value;
           current.meta.updatedAt = nowISO();
@@ -508,6 +462,59 @@ if (w.radioButton){
 
         stage.appendChild(el);
         overlayNodes.push(el);
+
+      } else {
+        const el = document.createElement('input');
+        el.type = 'checkbox';
+        el.className = 'chk';
+        el.dataset.fname = w.fieldName;
+
+        el.style.left = (cx - box/2 + OX) + "px";
+        el.style.top  = (cy - box/2 + OY) + "px";
+        el.style.width  = box + "px";
+        el.style.height = box + "px";
+
+        el.addEventListener('change', () => {
+          if (!current) return;
+          current.fields[w.fieldName] = el.checked;
+          current.meta.updatedAt = nowISO();
+          refreshStatus();
+        });
+
+        stage.appendChild(el);
+        overlayNodes.push(el);
+      }
+
+    } else if (t === "Tx") {
+      const isMulti = !!w.multiLine || ((w.fieldFlags || 0) & 4096) === 4096;
+      const el = document.createElement(isMulti ? 'textarea' : 'input');
+      if (!isMulti) el.type = 'text';
+
+      el.className = 'fld' + (height < 20 ? ' small' : '');
+      el.dataset.fname = w.fieldName;
+
+      el.style.left = left + "px";
+      el.style.top = top + "px";
+      el.style.width = Math.max(width, 40) + "px";
+      el.style.height = Math.max(isMulti ? 40 : 18, height) + "px";
+
+      el.addEventListener('input', () => {
+        if (!current) return;
+        current.fields[w.fieldName] = el.value;
+        current.meta.updatedAt = nowISO();
+        refreshStatus();
+      });
+
+      stage.appendChild(el);
+      overlayNodes.push(el);
+
+    } else {
+      // ignore andra fälttyper
+    }
+  }
+
+  populateOverlayFromCurrent();
+}
 
       } else {
         // fallback
