@@ -183,6 +183,19 @@
 
 <script>
 (() => {
+  window.addEventListener("error", (e) => {
+  try {
+    errBox.style.display = "";
+    errBox.textContent = "JS-fel:\n" + (e?.message || e);
+  } catch {}
+});
+window.addEventListener("unhandledrejection", (e) => {
+  try {
+    errBox.style.display = "";
+    errBox.textContent = "Promise-fel:\n" + (e?.reason?.message || e?.reason || e);
+  } catch {}
+});
+
   // Service worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
@@ -561,6 +574,17 @@ function buildOverlayNodes(widgets){
       }
     }
   }
+(async () => {
+  const testUrl = "./sheet.pdf?v=" + Date.now();
+  try {
+    const r = await fetch(testUrl, { cache: "no-store" });
+    statusPill.textContent = "sheet.pdf fetch: " + r.status;
+    if (!r.ok) showError("sheet.pdf kunde inte hämtas. Status: " + r.status);
+  } catch (e) {
+    statusPill.textContent = "sheet.pdf fetch: FAIL";
+    showError("sheet.pdf fetch fail:\n" + (e?.message || String(e)));
+  }
+})();
 
  async function loadPdfAndBuildOverlay(){
   const pdfUrl = "./sheet.pdf?v=" + Date.now();
