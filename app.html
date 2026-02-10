@@ -113,74 +113,59 @@
   </style>
 
   <!-- pdf.js (stabil version på cdnjs) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.min.js"></script>
-</head>
-
-<body>
-<header>
-  <div class="wrap">
-    <div class="row">
-      <div>
-        <h1>setup-organizer</h1>
-        <div class="sub">X4F 2024 · PDF-formfält (100%)</div>
-      </div>
-      <div class="spacer"></div>
-      <button class="btn ghost" id="btnNew">Ny setup</button>
-      <button class="btn primary" id="btnSave">Spara</button>
-      <button class="btn danger" id="btnDelete" style="display:none">Radera</button>
-    </div>
-  </div>
-</header>
-
-<main class="wrap">
-  <div class="two">
-
-    <section class="card">
-      <div style="font-weight:900">Factory baselines</div>
-      <div class="meta">Låsta mallar (kopiera som ny)</div>
-      <div class="hr"></div>
-      <div class="list" id="baselineList"></div>
-
-      <div class="hr"></div>
-
-      <div style="font-weight:900">Mina setuper</div>
-      <div class="meta">Sök + filter</div>
-
-      <div class="row" style="margin-top:10px">
-        <input id="q" placeholder="Sök: bana, däck, kommentar...">
-      </div>
-      <div class="row" style="margin-top:10px">
-        <input id="fSurface" placeholder="Filter underlag (carpet/asphalt)">
-        <input id="fTraction" placeholder="Filter grepp (low/medium/high)">
-      </div>
-
-      <div class="hr"></div>
-      <div class="list" id="myList"></div>
-      <div class="meta" id="emptyHint" style="display:none">Inga setuper än.</div>
-    </section>
-
-    <section class="stageWrap">
-      <div class="row" style="margin-bottom:10px">
-        <span class="pill" id="statusPill">Laddar sheet.pdf…</span>
-        <span class="pill">Källa: sheet.pdf</span>
-      </div>
-
-      <div class="stageScroller">
-        <div class="stage" id="stage">
-          <canvas id="pdfCanvas"></canvas>
-        </div>
-      </div>
-
-      <div class="meta" style="margin-top:10px">
-        Om du vill skriva i små rutor: zooma in med webbläsarens pinch-zoom.
-      </div>
-
-      <div id="errBox" class="err" style="display:none"></div>
-    </section>
-
-  </div>
-</main>
 <script>
+(() => {
+  const statusPill = document.getElementById('statusPill');
+  const errBox = document.getElementById('errBox');
+  const canvas = document.getElementById('pdfCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function showError(msg){
+    errBox.style.display = '';
+    errBox.textContent = msg;
+  }
+
+  async function loadPdf(){
+    try {
+      statusPill.textContent = "Testar sheet.pdf…";
+
+      // cache-buster
+      const url = "./sheet.pdf?v=" + Date.now();
+
+      // först: rå fetch
+      const r = await fetch(url, { cache: "no-store" });
+      statusPill.textContent = "fetch status: " + r.status;
+      if (!r.ok){
+        showError("Kunde inte hämta sheet.pdf. Status: " + r.status);
+        return;
+      }
+
+      // sen: pdf.js
+      statusPill.textContent = "Laddar PDF…";
+      const loadingTask = pdfjsLib.getDocument({ url, disableWorker: true });
+      const pdf = await loadingTask.promise;
+
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 1.6 });
+
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      statusPill.textContent = "PDF laddad OK";
+    }
+    catch(e){
+      showError("Fel vid PDF-laddning:\n" + (e?.message || e));
+      statusPill.textContent = "Fel";
+      console.error(e);
+    }
+  }
+
+  loadPdf();
+})();
+</script>
+
 (() => {
   // ---------- UI refs ----------
   const baselineList = document.getElementById('baselineList');
