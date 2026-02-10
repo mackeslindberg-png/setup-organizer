@@ -347,82 +347,54 @@
       baselineList.appendChild(el);
     }
   }
+function renderMyList(){
+  all = loadAll().sort((a,b)=> (b.meta?.updatedAt||'').localeCompare(a.meta?.updatedAt||''));
+  const filtered = all.filter(matchFilters);
 
-  function renderMyList(){
-    all = loadAll().sort((a,b)=> (b.meta?.updatedAt||'').localeCompare(a.meta?.updatedAt||''));
-    const filtered = all.filter(matchFilters);
+  myList.innerHTML = '';
+  emptyHint.style.display = filtered.length ? 'none' : 'block';
 
-    myList.innerHTML = '';
-    emptyHint.style.display = filtered.length ? 'none' : 'block';
+  for (const s of filtered){
+    const {track, meta} = listLabel(s);
 
-    for (const s of filtered){
-      const {track, meta} = listLabel
+    const el = document.createElement('div');
+    el.className = 'item';
 
+    const left = document.createElement('div');
+    left.innerHTML = `<strong>${escapeHtml(track)}</strong><small>${escapeHtml(meta)}</small>`;
 
-      const el = document.createElement('div');
-      el.className = 'item';
+    const actions = document.createElement('div');
+    actions.className = 'actions';
 
-      const left = document.createElement('div');
-      left.innerHTML = `<strong>${escapeHtml(track)}</strong><small>${escapeHtml(meta)}</small>`;
+    const open = document.createElement('button');
+    open.className = 'btn';
+    open.textContent = 'Öppna';
+    open.onclick = () => { current = s; populateOverlayFromCurrent(); refreshStatus(); };
 
-      const actions = document.createElement('div');
-      actions.className = 'actions';
+    const dup = document.createElement('button');
+    dup.className = 'btn ghost';
+    dup.textContent = 'Kopiera';
+    dup.onclick = () => {
+      const copy = JSON.parse(JSON.stringify(s));
+      copy.id = uid();
+      copy.meta = { ...copy.meta, createdAt: nowISO(), updatedAt: nowISO() };
+      all.unshift(copy);
+      saveAll(all);
+      renderMyList();
+    };
 
-      const open = document.createElement('button');
-      open.className = 'btn';
-      open.textContent = 'Öppna';
-      open.onclick = () => { current = s; populateOverlayFromCurrent(); refreshStatus(); };
-
-      const dup = document.createElement('button');
-      dup.className = 'btn ghost';
-      dup.textContent = 'Kopiera';
-      dup.onclick = () => {
-        const copy = JSON.parse(JSON.stringify(s));
-        copy.id = uid();
-        copy.meta = { ...copy.meta, createdAt: nowISO(), updatedAt: nowISO() };
-        all.unshift(copy);
-        saveAll(all);
-        renderMyList();
-      };
-
-      actions.append(open, dup);
-      el.append(left, actions);
-      myList.appendChild(el);
-    }
+    actions.append(open, dup);
+    el.append(left, actions);
+    myList.appendChild(el);
   }
+}
 
-  function hardSave(){
-    if (!current){
-      current = newBlankSetup();
-      all.unshift(current);
-    }
-    current.meta.updatedAt = nowISO();
+function clearOverlay(){
+  for (const n of overlayNodes) n.remove();
+  overlayNodes = [];
+}
 
-    const arr = loadAll();
-    const idx = arr.findIndex(x => x.id === current.id);
-    if (idx >= 0) arr[idx] = current;
-    else arr.unshift(current);
-    saveAll(arr);
-    renderMyList();
-    alert('Sparad.');
-  }
-
-  function hardDelete(){
-    if (!current) return;
-    const arr = loadAll().filter(x => x.id !== current.id);
-    saveAll(arr);
-    current = null;
-    renderMyList();
-    populateOverlayFromCurrent();
-    refreshStatus();
-  }
-
-  function clearOverlay(){
-    for (const n of overlayNodes) n.remove();
-    overlayNodes = [];
-  }
-
-  function pdfRectToCss(rect){
+function pdfRectToCss(rect){
   const r = pdfjsLib.Util.normalizeRect(rect);
   const v = viewport.convertToViewportRectangle(r);
   const x1 = v[0], y1 = v[1], x2 = v[2], y2 = v[3];
@@ -444,7 +416,6 @@ function buildOverlayNodes(widgets){
     const { left, top, width, height } = pdfRectToCss(w.rect);
     const t = w.fieldType;
 
-    // centrum av PDF-rutan (viktigt)
     const cx = left + width / 2;
     const cy = top + height / 2;
 
@@ -518,43 +489,31 @@ function buildOverlayNodes(widgets){
 
       stage.appendChild(el);
       overlayNodes.push(el);
-
-    } else {
-      // ignore andra fälttyper
     }
   }
 
   populateOverlayFromCurrent();
 }
 
-      } else {
-        // fallback
-        const el = document.createElement('input');
-        el.type = 'text';
-        el.className = 'fld small';
-        el.dataset.fname = w.fieldName;
+function populateOverlayFromCurrent(){
+  const f = current?.fields || {};
+  const nodes = stage.querySelectorAll('input, textarea');
 
-        el.style.left = left + "px";
-        el.style.top = top + "px";
-        el.style.width = Math.max(width, 40) + "px";
-        el.style.height = Math.max(18, height) + "px";
+  for (const el of nodes){
+    const fieldName = el.dataset.fname || el.name || '';
+    if (!fieldName) continue;
 
-        el.addEventListener('input', () => {
-          if (!current) return;
-          current.fields[w.fieldName] = el.value;
-          current.meta.updatedAt = nowISO();
-          refreshStatus();
-        });
-
-        stage.appendChild(el);
-        overlayNodes.push(el);
-      }
+    if (el.type === 'radio'){
+      const wanted = f[fieldName];
+      el.checked = wanted ? (String(wanted) === String(el.value)) : false;
+    } else if (el.type === 'checkbox'){
+      el.checked = !!f[fieldName];
+    } else {
+      el.value = String(f[fieldName] ?? '');
     }
-
-    populateOverlayFromCurrent();
   }
+}
 
-  function populateOverlayFromCurrent(){
     const f = current?.fields || {};
     const nodes = stage.querySelectorAll('input, textarea');
 
