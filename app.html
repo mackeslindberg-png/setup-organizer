@@ -180,51 +180,9 @@
 
   </div>
 </main>
-
 <script>
 (() => {
-  window.addEventListener("error", (e) => {
-  try {
-    errBox.style.display = "";
-    errBox.textContent = "JS-fel:\n" + (e?.message || e);
-  } catch {}
-});
-window.addEventListener("unhandledrejection", (e) => {
-  try {
-    errBox.style.display = "";
-    errBox.textContent = "Promise-fel:\n" + (e?.reason?.message || e?.reason || e);
-  } catch {}
-});
-
-  // Service worker
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
-  }
-
-  const KEY = 'setup_organizer_pdf_fields_v2';
-  const uid = () => Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
-  const nowISO = () => new Date().toISOString();
-  const norm = (s) => String(s ?? '').trim().toLowerCase();
-  const escapeHtml = (s) =>
-    String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
-      .replaceAll('"','&quot;').replaceAll("'","&#039;");
-
-  function loadAll(){
-    try{
-      const raw = localStorage.getItem(KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr : [];
-    }catch{ return []; }
-  }
-  function saveAll(arr){
-    localStorage.setItem(KEY, JSON.stringify(arr));
-  }
-
-  const PDFS = {
-    carpet: "https://teamxray.com/downloads/95/x4f_2024_set_up_basic_for_ets_carpet.pdf",
-    asphalt: "https://teamxray.com/downloads/20/x4f_2024_set_up_basic_for_ets_asphalt.pdf"
-  };
-
+  // ---------- UI refs ----------
   const baselineList = document.getElementById('baselineList');
   const myList = document.getElementById('myList');
   const emptyHint = document.getElementById('emptyHint');
@@ -243,19 +201,58 @@ window.addEventListener("unhandledrejection", (e) => {
   const canvas = document.getElementById('pdfCanvas');
   const ctx = canvas.getContext('2d', { alpha:false });
 
+  // ---------- SW ----------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  }
+
+  // ---------- Hard error surface (no more silent failures) ----------
+  function showError(msg){
+    errBox.style.display = '';
+    errBox.textContent = String(msg ?? '');
+  }
+  window.addEventListener("error", (e) => {
+    showError("JS-fel:\n" + (e?.message || e));
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    showError("Promise-fel:\n" + (e?.reason?.message || e?.reason || e));
+  });
+
+  // ---------- storage ----------
+  const KEY = 'setup_organizer_pdf_fields_v3';
+  const uid = () => Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2);
+  const nowISO = () => new Date().toISOString();
+  const norm = (s) => String(s ?? '').trim().toLowerCase();
+  const escapeHtml = (s) =>
+    String(s ?? '')
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+      .replaceAll('"','&quot;').replaceAll("'","&#039;");
+
+  function loadAll(){
+    try{
+      const raw = localStorage.getItem(KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch{ return []; }
+  }
+  function saveAll(arr){
+    localStorage.setItem(KEY, JSON.stringify(arr));
+  }
+
+  const PDFS = {
+    carpet: "https://teamxray.com/downloads/95/x4f_2024_set_up_basic_for_ets_carpet.pdf",
+    asphalt: "https://teamxray.com/downloads/20/x4f_2024_set_up_basic_for_ets_asphalt.pdf"
+  };
+
   let all = loadAll().sort((a,b)=> (b.meta?.updatedAt||'').localeCompare(a.meta?.updatedAt||''));
   let current = null;
 
+  // ---------- PDF state ----------
   let pdfDoc = null;
   let page = null;
   let viewport = null;
   let widgetAnnots = [];
   let overlayNodes = [];
-
-  function showError(msg){
-    errBox.style.display = '';
-    errBox.textContent = msg;
-  }
 
   function newBlankSetup(){
     return { id: uid(), meta: { updatedAt: nowISO(), createdAt: nowISO() }, fields: {} };
@@ -359,7 +356,8 @@ window.addEventListener("unhandledrejection", (e) => {
     emptyHint.style.display = filtered.length ? 'none' : 'block';
 
     for (const s of filtered){
-      const {track, meta} = listLabel(s);
+      const {track, meta} = listLabel
+
 
       const el = document.createElement('div');
       el.className = 'item';
