@@ -46,7 +46,7 @@
     .two{display:grid;grid-template-columns: 380px 1fr;gap:12px}
     @media (max-width: 980px){ .two{grid-template-columns:1fr;}}
 
-    input, textarea, select{
+    input, textarea{
       width:100%;padding:10px 11px;border-radius:12px;border:1px solid var(--line);
       background:#0c0d10;color:var(--text);outline:none;font-size:14px;
     }
@@ -157,6 +157,7 @@
     }
   </style>
 
+  <!-- pdf.js (inbyggd worker i denna version, vi kör disableWorker ändå) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.min.js"></script>
 </head>
 
@@ -466,6 +467,7 @@
         all.unshift(p);
         saveAll(all);
         current = p;
+
         renderMyList();
         setViewingLap(null);
         populateOverlay();
@@ -526,7 +528,6 @@
         copy.meta.createdAt = nowISO();
         copy.meta.updatedAt = nowISO();
         copy.meta.name = (copy.meta.name || "Setup") + " (kopia)";
-        // kopia av raceday: behåll laps men nollställ view
         if (copy.raceday) copy.raceday.viewLapId = null;
         all.unshift(copy);
         saveAll(all);
@@ -587,7 +588,6 @@
       all.unshift(current);
     }
 
-    // Create NEW project as raceday copy
     const p = deepCopy(current);
     p.id = uid();
     p.meta = {
@@ -633,14 +633,13 @@
 
   function saveLapSnapshot(){
     if (!racedayActive()) return;
-
     const lt = String(lapTime.value || '').trim();
     if (!lt){
       alert("Fyll i varvtid (t.ex. 14,56).");
       return;
     }
 
-    // Always snapshot from LIVE fields (not read-only view)
+    // snapshot alltid från LIVE (current.fields)
     const lap = {
       id: uid(),
       lapTime: lt,
@@ -661,7 +660,6 @@
     const lap = getViewingLap();
     if (!lap) return;
 
-    // Copy snapshot into live fields, exit read-only
     current.fields = deepCopy(lap.fields || {});
     setViewingLap(null);
 
@@ -707,7 +705,6 @@
       roText.innerHTML = `Visar: <span class="mono">${escapeHtml(fmtTime(viewing.savedAt))}</span> · Varvtid: <span class="mono">${escapeHtml(viewing.lapTime)}</span>`;
     }
 
-    // Render lap list (latest first)
     lapList.innerHTML = '';
     if (!lapsCount){
       lapList.innerHTML = `<div class="tiny">Inga varvtider sparade än.</div>`;
@@ -780,10 +777,19 @@
 
   function setOverlayDisabled(disabled){
     for (const el of overlayNodes){
-      if (el.type === 'checkbox' || el.type === 'radio' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA'){
-        el.disabled = !!disabled;
-      }
+      el.disabled = !!disabled;
     }
+  }
+
+  // Unik nyckel för Btn-widgets (fixar XRAY-PDF där flera rutor delar fieldName)
+  function widgetKey(w){
+    const ev =
+      (w.exportValue != null ? String(w.exportValue) : "") ||
+      (w.buttonValue != null ? String(w.buttonValue) : "") ||
+      (w.appearanceState != null ? String(w.appearanceState) : "") ||
+      "";
+    const r = (w.rect && Array.isArray(w.rect)) ? w.rect.map(n => Math.round(n)).join(",") : "";
+    return `${w.fieldName}|${ev}|${r}`;
   }
 
   function buildOverlayNodes(widgets){
@@ -808,8 +814,9 @@
           el.type = 'radio';
           el.className = 'rad';
           el.name = w.fieldName;
-          el.value = w.exportValue || "On";
+          el.value = w.exportValue || w.buttonValue || w.appearanceState || "On";
           el.dataset.fname = w.fieldName;
+          el.dataset.fval  = el.value;
 
           el.style.left = (cx - box/2 + OX) + "px";
           el.style.top  = (cy - box/2 + OY) + "px";
@@ -818,7 +825,7 @@
 
           el.addEventListener('change', () => {
             if (!current) return;
-            if (getViewingLap()) return; // read-only
+            if (getViewingLap()) return;
             current.fields[w.fieldName] = el.value;
             current.meta.updatedAt = nowISO();
             persistCurrent();
@@ -832,6 +839,9 @@
           const el = document.createElement('input');
           el.type = 'checkbox';
           el.className = 'chk';
+
+          const key = widgetKey(w);
+          el.dataset.fkey  = key;
           el.dataset.fname = w.fieldName;
 
           el.style.left = (cx - box/2 + OX) + "px";
@@ -841,8 +851,8 @@
 
           el.addEventListener('change', () => {
             if (!current) return;
-            if (getViewingLap()) return; // read-only
-            current.fields[w.fieldName] = el.checked;
+            if (getViewingLap()) return;
+            current.fields[key] = el.checked;
             current.meta.updatedAt = nowISO();
             persistCurrent();
             renderMyList();
@@ -867,7 +877,7 @@
 
         el.addEventListener('input', () => {
           if (!current) return;
-          if (getViewingLap()) return; // read-only
+          if (getViewingLap()) return;
           current.fields[w.fieldName] = el.value;
           current.meta.updatedAt = nowISO();
           persistCurrent();
@@ -888,16 +898,19 @@
     const nodes = stage.querySelectorAll('input, textarea');
 
     for (const el of nodes){
-      const fieldName = el.dataset.fname || el.name || '';
-      if (!fieldName) continue;
+      const fkey = el.dataset.fkey || "";
+      const fname = el.dataset.fname || el.name || "";
 
       if (el.type === 'radio'){
-        const wanted = f[fieldName];
-        el.checked = wanted ? (String(wanted) === String(el.value)) : false;
+        const wanted = f[fname];
+        const myVal = el.dataset.fval || el.value;
+        el.checked = wanted ? (String(wanted) === String(myVal)) : false;
       } else if (el.type === 'checkbox'){
-        el.checked = !!f[fieldName];
+        const key = fkey || fname;
+        el.checked = !!f[key];
       } else {
-        el.value = String(f[fieldName] ?? '');
+        if (!fname) continue;
+        el.value = String(f[fname] ?? '');
       }
     }
 
@@ -967,7 +980,6 @@
     all.unshift(current);
     saveAll(all);
     renderMyList();
-    clearOverlay();
     setViewingLap(null);
     populateOverlay();
     updateRacedayUI();
@@ -989,6 +1001,9 @@
     current = newBlankProject();
     all.unshift(current);
     saveAll(all);
+  } else {
+    // säkerställ raceday-struct om gammal data
+    if (current.meta?.isRaceday) ensureRacedayStruct(current);
   }
 
   updateRacedayUI();
